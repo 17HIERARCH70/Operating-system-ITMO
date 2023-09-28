@@ -13,7 +13,7 @@ struct timeval start, end;
 int is_pid_folder(const struct dirent *entry)
 {
     const char *p;
-    for (p = entry->d_name; *p; p++)
+    for (p = entry->d_name; *p; p++) 
     {
         if (!isdigit(*p))
         {
