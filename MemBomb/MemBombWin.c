@@ -2,10 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
-
-#ifdef _WIN64
 #include <windows.h>
-#endif
 
 #define DEBUG 1
 #define LOG_FILE "log.txt"
@@ -13,34 +10,24 @@
 #define MAX_MEMORY 256 * 1024 * 1024
 #define START_DIR "/proc"
 
-#ifdef _WIN64
 LARGE_INTEGER frequency;
 LARGE_INTEGER startCounter;
 FILE* logFile;
-#endif
-
-#ifdef _WIN64
 int isLinux = 0;
-#endif
 
 // Function to start a performance counter
-#ifdef _WIN64
 void StartCounter() {
     QueryPerformanceFrequency(&frequency);
     QueryPerformanceCounter(&startCounter);
 }
-#endif
 
 // Function to get the elapsed time from the performance counter
-#ifdef _WIN64
 double GetCounter() {
     LARGE_INTEGER endCounter;
     QueryPerformanceCounter(&endCounter);
     return (double)(endCounter.QuadPart - startCounter.QuadPart) / frequency.QuadPart;
 }
-#endif
 
-#ifdef _WIN64
 // Function to initialize the log file
 int InitializeLogFile() {
     logFile = fopen(LOG_FILE, "a+");
@@ -52,9 +39,7 @@ int InitializeLogFile() {
     fclose(logFile);
     return 0;
 }
-#endif
 
-#ifdef _WIN64
 // Function to write memory usage and time to the log file on Windows
 int WriteLogFile(int availableMemory) {
     logFile = fopen(LOG_FILE, "a+");
@@ -66,9 +51,7 @@ int WriteLogFile(int availableMemory) {
     }
     return 0;
 }
-#endif
 
-#ifdef _WIN64
 int main(int argc, char* argv[]) {
     StartCounter();
     InitializeLogFile();
@@ -93,5 +76,4 @@ int main(int argc, char* argv[]) {
     }
     return 0;
 }
-#endif
 
