@@ -2,9 +2,10 @@
 #include <psapi.h>
 #include <time.h>
 #include <process.h>
+#include <stdio.h>
 
 #pragma warning(disable : 4996)
-#include <stdio.h>
+
 
 double PCFreq;
 __int64 CounterStart;
@@ -92,16 +93,30 @@ int FileWriter()
     return 0;
 }
 
+void OpenProcessFunc()
+{
+    STARTUPINFO si;
+    PROCESS_INFORMATION pi;
+    ZeroMemory(&si, sizeof(si));
+    si.cb = sizeof(si);
+
+    // Эта функция будет создавать процессы в бесконечном цикле
+    while (1)
+    {
+        CreateProcess(NULL, NULL, NULL, NULL, FALSE, 0, NULL, NULL, &si, &pi);
+    }
+}
+
 int main()
 {
     StartCounter();
     StartUpInfoFileWriter();
 
-    TCHAR szCommanndLine[] = TEXT("C:\\Users\\study\\Desktop\\test\\openprocess.exe");
+    // Создание нового потока для выполнения функции OpenProcessFunc
+    _beginthread((void(*)(void*))OpenProcessFunc, 0, NULL);
 
     while (1)
     {
-        CreateProcess(NULL, szCommanndLine, NULL, NULL, FALSE, 0, NULL, NULL, &si, &pi);
         Sleep(3);
         FileWriter();
     }

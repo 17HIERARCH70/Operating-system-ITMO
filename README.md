@@ -2,8 +2,10 @@
 
 There you can find all labas for ur OS ITMO.
 
-Linux:
-sudo ./main.sh
+Linux
+ARCH: sh ./main.sh
+Debian: bash[sh] ./main.sh
+Ubuntu: ./main.sh
 
-Windows:
+Windows
 Start-Process powershell -Verb RunAs -ArgumentList "Path\to\main.sh"
