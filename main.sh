@@ -99,6 +99,7 @@ Scheduler() {
     echo $ORIG_SCHEDULER > /sys/block/$DISC/queue/scheduler
     echo "Восстановлен исходный планировщик: $ORIG_SCHEDULER"
     cd $workdir
+    
 }
 
 LinPack() {
