@@ -192,9 +192,9 @@ ForkBomb() {
 
     if [[ "$OSTYPE" == "linux-gnu"* || "$OSTYPE" == "msys"* || "$OSTYPE" == "cygwin" ]]; then
         if [[ "$OSTYPE" == "linux-gnu"* ]]; then
-            gcc -o main ForkbombLin.c
+            gcc -o main ForkBombLin.c
         else
-            gcc -o main ForkbombWin.c
+            gcc -o main ForkBombWin.c
         fi
 
         read -p "Вы уверены?
