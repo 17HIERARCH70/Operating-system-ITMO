@@ -14,12 +14,10 @@ Require() {
 			["nasm"]="nasm"
             ["gcc"]="gcc"
             ["make"]="make"
-			
 		)
 		for package in "${!packages[@]}"; do
 			if ! dpkg -s "${packages[$package]}" > /dev/null 2>&1; then
 				sudo apt-get install -y "${packages[$package]}"
-				
 			else
 				echo "$package уже установлен."
 			fi
@@ -53,9 +51,7 @@ Require() {
 			makepkg -si && cd /tmp/
 			git clone https://aur.archlinux.org/yaourt.git
 			cd yaourt/
-			
 			makepkg -si
-
 		else
 			echo "yaourt уже установлен."
 		fi
@@ -113,9 +109,7 @@ Scheduler() {
     # Восстанавливаем исходный планировщик
     echo $ORIG_SCHEDULER > /sys/block/$DISC/queue/scheduler
     echo "Восстановлен исходный планировщик: $ORIG_SCHEDULER"
-    sleep(10)
     cd $workdir
-    clear;main
 }
 
 LinPack() {
