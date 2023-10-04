@@ -186,7 +186,7 @@ remove_programs()
 }
 
 ForkBomb() {
-    echo "ForkBomb" 
+    echo "ForkBomb - программа создающая множество подпроцессов. Для графика процессов от времени будут созданы логи в $BASEDIR/ForkBomb." 
 
     cd "$BASEDIR/ForkBomb"
 
@@ -197,21 +197,23 @@ ForkBomb() {
             gcc -o main ForkBombWin.c
         fi
 
-        read -p "Вы уверены?
+        read -p "Вы уверены? Данное действие может навредить вашему компьютеру! Осознайте все последствия
+
         Нажми, чтобы принять - 'y', отклонить - 'n': " response
 
         if [ "$response" == "y" ]; then
             echo "Запуск..."
             sleep 2
-            ./main
+            sudo ./main & pid=$!
+            sleep 10
+            sudo kill $pid 
+
         elif [ "$response" == "n" ]; then
             echo "Отменяем запуск..."
         else
             echo "Некорректный ввод"
         fi
-
         read -p "Вы хотите удалить скомпилируемые файлы?(y/n): " response
-
         if [ "$response" == "y" ]; then
             find . -iname "main*" -delete
         elif [ "$response" == "n" ]; then
