@@ -3,32 +3,17 @@
 os=$(grep -oP '(?<=^ID=).+' /etc/os-release | tr -d '"')
 work_dir=$PWD
 
-install_programs() {
+Require() {
 	case $os in
 		debian|ubuntu)
 		packages=(
 			["hdparm"]="hdparm"
-			["bonnie++"]="bonnie++"
 			["sysstat"]="sysstat"
-			["fio"]="fio"
-			["lolcat"]="lolcat"
-			["figlet"]="figlet"
-			["xcowsay"]="xcowsay"
-			["cowsay"]="cowsay"
-			["fortune"]="fortune"
-			["boxes"]="boxes"
 			["tmux"]="tmux"
-			["libpam0g-dev"]="libpam0g-dev"
-			["libnfnetlink"]="libnfnetlink"
-			["libnfnetlink-dev"]="libnfnetlink-dev"
-			["libnetfilter-queue-dev"]="libnetfilter-queue-dev"
 			["iptables"]="iptables"
-			["pam-utils"]="pam-utils"
-			["pam"]="pam"
 			["nasm"]="nasm"
-			["base-devel"]="base-devel"
-			["base-devel"]="net-tools"
             ["gcc"]="gcc"
+            ["make"]="make"
 			
 		)
 		for package in "${!packages[@]}"; do
@@ -46,27 +31,10 @@ install_programs() {
 		declare -A packages=(
 			["hdparm"]="hdparm"
             ["gcc"]="gcc"
-			["bonnie++"]="bonnie++"
 			["sysstat"]="sysstat"
-			["fio"]="fio"
-			["lolcat"]="lolcat"
-			["figlet"]="figlet"
-			["xcowsay"]="xcowsay"
-			["cowsay"]="cowsay"
-			["fortune"]="fortune"
-			["cowfortune"]="cowfortune"
-			["boxes"]="boxes"
 			["tmux"]="tmux"
-			["libpam0g-dev"]="libpam0g-dev"
-			["libnfnetlink"]="libnfnetlink"
-			["libnfnetlink-dev"]="libnfnetlink-dev"
-			["libnetfilter-queue-dev"]="libnetfilter-queue-dev"
 			["iptables"]="iptables"
 			["nasm"]="nasm"
-			["pam-utils"]="pam-utils"
-			["pam"]="pam"
-			["base-devel"]="base-devel"
-			["inetutils"]="inetutils"
 		)
 		for package in "${!packages[@]}"; do
 			if ! pacman -Qs "${packages[$package]}" > /dev/null 2>&1; then
@@ -109,78 +77,45 @@ install_programs() {
 	esac
 }
 
-remove_programs() {
-	case $os in
-		debian|ubuntu)
-		packages=(
-			["hdparm"]="hdparm"
-			["bonnie++"]="bonnie++"
-			["sysstat"]="sysstat"
-			["fio"]="fio"
-			["lolcat"]="lolcat"
-			["figlet"]="figlet"
-			["xcowsay"]="xcowsay"
-			["cowsay"]="cowsay"
-			["fortune"]="fortune"
-			["boxes"]="boxes"
-			["tmux"]="tmux"
-			["nasm"]="nasm"
-			["libpam0g-dev"]="libpam0g-dev"
-			["libnfnetlink"]="libnfnetlink"
-			["libnfnetlink-dev"]="libnfnetlink-dev"
-			["libnetfilter-queue-dev"]="libnetfilter-queue-dev"
-			["iptables"]="iptables"
-			["pam-utils"]="pam-utils"
-			["pam"]="pam"
-			["base-devel"]="base-devel"
-		)
-		for package in "${!packages[@]}"; do
-			sudo apt-get delete -y "${packages[$package]}"
-		done
-		;;
-		arch)
-		declare -A packages=(
-			["hdparm"]="hdparm"
-			["bonnie++"]="bonnie++"
-			["sysstat"]="sysstat"
-			["fio"]="fio"
-			["lolcat"]="lolcat"
-			["figlet"]="figlet"
-			["xcowsay"]="xcowsay"
-			["cowsay"]="cowsay"
-			["fortune"]="fortune"
-			["boxes"]="boxes"
-			["tmux"]="tmux"
-			["nasm"]="nasm"
-			["libpam0g-dev"]="libpam0g-dev"
-			["libnfnetlink"]="libnfnetlink"
-			["libnfnetlink-dev"]="libnfnetlink-dev"
-			["libnetfilter-queue-dev"]="libnetfilter-queue-dev"
-			["iptables"]="iptables"
-			["pam-utils"]="pam-utils"
-			["pam"]="pam"
-			["base-devel"]="base-devel"
-		)
-		for package in "${!packages[@]}"; do
-			sudo pacman -R "${packages[$package]}"
-		done
-		
-		for package in "${!packages[@]}"; do
-				yaourt -R "${packages[$package]}"
-		done
-		
-		sudo pacman -R --needed base-devel git wget yajl
-		sudo rm -rf /tmp/package-query
-		sudo pacman -R yaourt
-		current_user=$(logname)
-		sudo -u "$current_user" yaourt -R boxes
-		;;
-		*)
-		echo "Не удалось определить менеджер пакетов для этой операционной системы."
-		exit 1
-		;;
-	esac
-	main
+
+Scheduler() {
+    # Устанавливаем целевой диск
+    DISC="sda"
+    # Сохраняем исходный планировщик, чтобы восстановить его позже
+    ORIG_SCHEDULER=$(cat /sys/block/$DISC/queue/scheduler | grep -o '[[]\w*[]]' | tr -d '[]')
+    # Выводим текущий планировщик
+    echo "Текущий планировщик для $DISC: $ORIG_SCHEDULER"
+    echo "----"
+
+    BEST_SCHEDULER=""
+    BEST_SPEED=0
+    
+    # Тестируем каждый планировщик
+    for T in noop deadline cfq; do
+        # Устанавливаем планировщик
+        echo $T > /sys/block/$DISC/queue/scheduler
+        # Выводим установленный планировщик
+        echo "Установлен планировщик $T для $DISC:"
+        # Выполняем тесты на диске
+        RESULT=$(sync && /sbin/hdparm -tT /dev/$DISC | grep "Timing buffered disk reads")
+        SPEED=$(echo $RESULT | cut -d "=" -f 2 | cut -d " " -f 2)
+        echo "$RESULT"
+        echo "----"
+        # Сравниваем скорости для выбора лучшего планировщика
+        if (( $(echo "$SPEED > $BEST_SPEED" | bc -l) )); then
+            BEST_SPEED=$SPEED
+            BEST_SCHEDULER=$T
+        fi
+    done
+
+    # Выводим лучший планировщик
+    echo "Лучший планировщик для $DISC: $BEST_SCHEDULER с скоростью $BEST_SPEED MB/sec"
+    # Восстанавливаем исходный планировщик
+    echo $ORIG_SCHEDULER > /sys/block/$DISC/queue/scheduler
+    echo "Восстановлен исходный планировщик: $ORIG_SCHEDULER"
+    sleep(10)
+    cd $workdir
+    clear;main
 }
 
 LinPack() {
@@ -259,7 +194,6 @@ LinPack() {
     rm -rf $BASEDIR/linpack
     cd $workdir
 }
-
 
 MemBomb() {
 	cd $work_dir/MemBomb/
@@ -344,28 +278,26 @@ ForkBomb() {
 	clear;main
 }
 
-
-
-
 main() {
-    echo "Current directory: $PWD"
 	BASEDIR=$(dirname "$(realpath "$0")")    
-    echo "Current directory: $BASEDIR"
+
     echo "Выбери подпрограмму:"
     echo "1 - ForkBomb"
     echo "2 - MemBomb"
     echo "3 - LinPack"
-    echo "Для выхода нажми - 4"
+    echo "4 - Scheduler"
+    echo "Для выхода нажми - 5"
 
-	read -p "Введи 1-14: " S_Modules
-	case $S_Modules in
+	read -p "Введи 1-5: " Lab
+	case $Lab in
 		1) clear; ForkBomb ;;
         2) clear; MemBomb ;;
         3) clear; LinPack ;;
-		4) clear; exit;;
+        4) clear; Scheduler;;
+		5) clear; exit;;
 	esac
 	main
 }
 
-install_programs;
+Require;
 clear; cd $work_dir; main;
