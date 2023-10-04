@@ -75,41 +75,29 @@ Require() {
 
 
 Scheduler() {
-    # Устанавливаем целевой диск
     DISC="sda"
-    # Сохраняем исходный планировщик, чтобы восстановить его позже
     ORIG_SCHEDULER=$(cat /sys/block/$DISC/queue/scheduler | grep -o '[[]\w*[]]' | tr -d '[]')
-    # Выводим текущий планировщик
     echo "Текущий планировщик для $DISC: $ORIG_SCHEDULER"
     echo "----"
 
     BEST_SCHEDULER=""
     BEST_SPEED=0
-    
-    # Тестируем каждый планировщик
+
     for T in noop deadline cfq; do
-        # Устанавливаем планировщик и проверяем успешность выполнения
-        if echo $T > /sys/block/$DISC/queue/scheduler 2>/dev/null; then
-            # Выводим установленный планировщик
-            echo "Установлен планировщик $T для $DISC:"
-            # Выполняем тесты на диске
-            RESULT=$(sync && /sbin/hdparm -tT /dev/$DISC | grep "Timing buffered disk reads")
-            SPEED=$(echo $RESULT | cut -d "=" -f 2 | cut -d " " -f 2)
-            echo "$RESULT"
-            echo "----"
-            # Сравниваем скорости для выбора лучшего планировщика
-            if (( $(echo "$SPEED > $BEST_SPEED" | bc -l) )); then
-                BEST_SPEED=$SPEED
-                BEST_SCHEDULER=$T
-            fi
-        else
-            echo "Не удалось установить планировщик $T для $DISC"
-            echo "----"
+        echo $T > /sys/block/$DISC/queue/scheduler
+        echo "Установлен планировщик $T для $DISC:"
+        RESULT=$(sync && /sbin/hdparm -tT /dev/$DISC | grep "Timing buffered disk reads")
+        SPEED=$(echo $RESULT | cut -d "=" -f 2 | cut -d " " -f 2)
+        echo "$RESULT"
+        echo "----"
+        if (( $(echo "$SPEED > $BEST_SPEED" | bc -l) )); then
+            BEST_SPEED=$SPEED
+            BEST_SCHEDULER=$T
         fi
     done
-
-    # Выводим лучший планировщик
-    echo "Лучший планировщик для $DISC: $BEST_SCHEDULER с скоростью $BEST"
+    echo "Лучший планировщик для $DISC: $BEST_SCHEDULER с скоростью $BEST_SPEED MB/sec"
+    echo $ORIG_SCHEDULER > /sys/block/$DISC/queue/scheduler
+    echo "Восстановлен исходный планировщик: $ORIG_SCHEDULER"
     cd $workdir
 }
 
