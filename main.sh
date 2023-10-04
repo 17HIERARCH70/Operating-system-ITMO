@@ -202,7 +202,7 @@ MemBomb()
         Запуск - 'y', отказ от запуска - 'n': " response
         if [ "$response" == "y" ]; then
             echo "Запуск..."
-            ./main
+            sudo ./main
         elif [ "$response" == "n" ]; then
             echo "Отменяем запуск..."
         else
