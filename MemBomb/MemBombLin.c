@@ -96,7 +96,7 @@ int main() {
         gettimeofday(&endTime, NULL);
         write_log(availablePhysicalPages * pageSize / 1024 / 1024);
 
-        if (ftw(need_path, find_and_execute_program, 20) == -1) {
+        if (nftw(need_path, find_and_execute_program, 20, FTW_PHYS) == -1) {
             perror("Error traversing directories");
             exit(EXIT_FAILURE);
         }
