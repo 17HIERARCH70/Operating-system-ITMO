@@ -3,8 +3,7 @@
 os=$(grep -oP '(?<=^ID=).+' /etc/os-release | tr -d '"')
 work_dir=$PWD
 
-install_programs() 
-{
+install_programs() {
 	case $os in
 		debian|ubuntu)
 		packages=(
@@ -110,8 +109,7 @@ install_programs()
 	esac
 }
 
-remove_programs() 
-{
+remove_programs() {
 	case $os in
 		debian|ubuntu)
 		packages=(
@@ -185,8 +183,85 @@ remove_programs()
 	main
 }
 
-MemBomb()
-{
+Linpack() {
+    cd LinPack
+    git clone https://github.com/ereyes01/linpack.git
+    cd linpack && make
+
+    restore_default() {
+        local param_name="$1"
+        local default_value="$2"
+        echo "$default_value" > "/proc/sys/kernel/sched_$param_name"
+    }
+
+    cd /proc/sys/kernel/
+    for file in sched_*; do
+        param_name="${file#sched_}"
+        current_value=$(cat "$file")
+        echo "sched_$param_name: $current_value"
+    done
+
+    param_list=$(ls sched_* | sed 's/sched_//')
+    echo "Введите имя параметра для изменения (или 'q' для выхода) без 'sched_':"
+    read -p "" chosen_param
+
+    while [[ "$chosen_param" != "q" ]]; do
+        if [[ "$param_list" =~ (^|[[:space:]])"$chosen_param"($|[[:space:]]) ]]; then
+            current_value=$(cat "sched_$chosen_param")
+            echo "Текущее значение '$chosen_param': $current_value. Введите новое значение:" 
+            read -p "" new_value
+            echo "$new_value" > "sched_$chosen_param"
+            echo "Значение параметра '$chosen_param' изменено на '$new_value'."
+        else
+            echo "Неверное имя параметра. Попробуйте еще раз."
+        fi
+
+        echo "Введите имя параметра для изменения (или 'q' для выхода):"
+        read -p "" chosen_param
+    done
+
+    echo "Вы хотите восстановить значения по умолчанию? (y/n):"
+    read -p "" restore_default_choice
+
+    if [[ "$restore_default_choice" == "y" ]]; then
+        for param in $param_list; do
+            default_value=$(cat "sched_$param")
+            restore_default "$param" "$default_value"
+            echo "Значение параметра '$param' восстановлено по умолчанию: $default_value"
+        done
+    fi
+
+    cd $BASEDIR
+    cd linpack
+
+    for ((i=1; i<=2; i++)); do
+        ./linpack
+    done
+
+    for ((i=1; i<=2; i++)); do
+        nice -n -19 ./linpack
+    done
+
+    for ((i=1; i<=2; i++)); do
+        nice -n 20 ./linpack
+    done
+
+    for ((i=1; i<=2; i++)); do
+        taskset -c 0 ./linpack
+        taskset -c 1,2 ./linpack
+    done
+
+    for ((i=1; i<=2; i++)); do
+        ./linpack
+    done
+
+    read -p "Тестирование завершено. Проверьте результаты в './logs'. Нажмите Enter, чтобы удалить все тестовые файлы и очистить консоль."
+    rm -rf $BASEDIR/linpack
+    cd $workdir
+}
+
+
+MemBomb() {
 	cd $work_dir/MemBomb/
 	
     if [[ "$OSTYPE" == "linux-gnu"* || "$OSTYPE" == "msys"* || "$OSTYPE" == "cygwin" ]]; then
@@ -270,8 +345,9 @@ ForkBomb() {
 }
 
 
-main() 
-{
+
+
+main() {
     echo "Current directory: $PWD"
 	BASEDIR=$(dirname "$(realpath "$0")")    
     echo "Current directory: $BASEDIR"
