@@ -354,14 +354,14 @@ main() {
     echo "Выбери подпрограмму:"
     echo "1 - ForkBomb"
     echo "2 - MemBomb"
-    echo "3 - LimPack"
+    echo "3 - LinPack"
     echo "Для выхода нажми - 4"
 
 	read -p "Введи 1-14: " S_Modules
 	case $S_Modules in
 		1) clear; ForkBomb ;;
         2) clear; MemBomb ;;
-        3) clear; LimPack ;;
+        3) clear; LinPack ;;
 		4) clear; exit;;
 	esac
 	main
