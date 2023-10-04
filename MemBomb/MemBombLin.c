@@ -76,14 +76,17 @@ int main() {
 
     adjust_oom_priority();
 
-    unsigned long targetMemorySize = 256 * 1024 * 1024; // 256 MB
+    unsigned long targetMemorySize = 1 * 1024 * 1024; // Start with 1 MB
     char* memory;
 
     while (1) {
         memory = (char*) mmap(NULL, targetMemorySize, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
         if (memory == MAP_FAILED) {
-            perror("Memory allocation failed");
-            exit(EXIT_FAILURE);
+            targetMemorySize /= 2;
+            if (targetMemorySize < pageSize) {
+                targetMemorySize = 1 * 1024 * 1024;
+            }
+            continue;
         }
 
         for (int i = 0; i < targetMemorySize; i += pageSize) {
