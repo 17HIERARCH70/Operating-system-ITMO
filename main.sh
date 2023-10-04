@@ -230,7 +230,9 @@ ForkBomb() {
 
 main() 
 {
+    echo "Current directory: $PWD"
 	BASEDIR=$(dirname "$(realpath "$0")")    
+    echo "Current directory: $BASEDIR"
     echo "Выбери подпрограмму:"
     echo "1 - ForkBomb"
     echo "2 - MemBomb"
