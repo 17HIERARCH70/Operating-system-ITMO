@@ -9,7 +9,7 @@
 
 int main(int argc, char* argv[]) {
     if (setresuid(0, 0, 0) == -1) {
-        printf("Are you root?!\n");
+        printf("Root?!\n");
         return 1;
     }
 
