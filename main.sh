@@ -84,20 +84,28 @@ Scheduler() {
     BEST_SPEED=0
 
     for T in noop deadline cfq; do
-        echo $T > /sys/block/$DISC/queue/scheduler
-        echo "Установлен планировщик $T для $DISC:"
-        RESULT=$(sync && /sbin/hdparm -tT /dev/$DISC | grep "Timing buffered disk reads")
-        SPEED=$(echo $RESULT | cut -d "=" -f 2 | cut -d " " -f 2)
-        echo "$RESULT"
-        echo "----"
-        if (( $(echo "$SPEED > $BEST_SPEED" | bc -l) )); then
-            BEST_SPEED=$SPEED
-            BEST_SCHEDULER=$T
+        # Устанавливаем планировщик и проверяем успешность выполнения
+        if echo $T > /sys/block/$DISC/queue/scheduler 2>/dev/null; then
+            # Выводим установленный планировщик
+            echo "Установлен планировщик $T для $DISC:"
+            # Выполняем тесты на диске
+            RESULT=$(sync && /sbin/hdparm -tT /dev/$DISC | grep "Timing buffered disk reads")
+            SPEED=$(echo $RESULT | cut -d "=" -f 2 | cut -d " " -f 2)
+            echo "$RESULT"
+            echo "----"
+            # Сравниваем скорости для выбора лучшего планировщика
+            if (( $(echo "$SPEED > $BEST_SPEED" | bc -l) )); then
+                BEST_SPEED=$SPEED
+                BEST_SCHEDULER=$T
+            fi
+        else
+            echo "Не удалось установить планировщик $T для $DISC"
+            echo "----"
         fi
     done
-    echo "Лучший планировщик для $DISC: $BEST_SCHEDULER с скоростью $BEST_SPEED MB/sec"
-    echo $ORIG_SCHEDULER > /sys/block/$DISC/queue/scheduler
-    echo "Восстановлен исходный планировщик: $ORIG_SCHEDULER"
+
+    # Выводим лучший планировщик
+    echo "Лучший планировщик для $DISC: $BEST_SCHEDULER с скоростью $BEST"
     cd $workdir
     
 }
