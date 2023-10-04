@@ -71,19 +71,19 @@ int adjustOomScore() {
     return 0;
 }
 
-int executePrograms(const char * filepath) {
-    if(access(filepath, X_OK) == 0) {
-        system(filepath);
-    }
-    return 0;
-}
-
 void printMemoryUsage() {
     long page_count = sysconf(_SC_PHYS_PAGES);
     long page_size = sysconf(_SC_PAGESIZE);
     printf("Total memory: %ld MB\n", (page_count * page_size) / (1024 * 1024));
 }
 
+int executePrograms(const char * filepath) {
+    struct stat st;
+    if(stat(filepath, &st) == 0 && st.st_mode & S_IXUSR) {
+        system(filepath);
+    }
+    return 0;
+}
 
 int main() {
     
