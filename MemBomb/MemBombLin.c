@@ -58,9 +58,9 @@ static int find_and_execute_program(const char *filePath, const struct stat *sta
     (void) statPtr; // Explicitly ignore unused parameter
 
     if (flag == FTW_F) {
-        log_info("Executing: %s\n", filePath);
-        system(filePath);
+        log_info("Found: %s\n", filePath);
     }
+
     return 0;
 }
 
