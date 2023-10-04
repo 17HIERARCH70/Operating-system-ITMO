@@ -7,7 +7,7 @@
 #define DEBUG 1
 #define LOG_FILE "log.txt"
 #define PAGE_SIZE 4096
-#define MAX_MEMORY 256 * 1024 * 1024
+#define MAX_MEMORY 4028 * 1024 * 1024
 #define START_DIR "/proc"
 
 LARGE_INTEGER frequency;
