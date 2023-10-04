@@ -75,42 +75,46 @@ Require() {
 
 
 Scheduler() {
-    # Устанавливаем целевой диск
     DISC="sda"
-    # Сохраняем исходный планировщик, чтобы восстановить его позже
     ORIG_SCHEDULER=$(cat /sys/block/$DISC/queue/scheduler | grep -o '[[]\w*[]]' | tr -d '[]')
-    # Выводим текущий планировщик
+    
     echo "Текущий планировщик для $DISC: $ORIG_SCHEDULER"
     echo "----"
 
     BEST_SCHEDULER=""
     BEST_SPEED=0
     
-    # Тестируем каждый планировщик
     for T in noop deadline cfq; do
-        # Устанавливаем планировщик
-        echo $T > /sys/block/$DISC/queue/scheduler
-        # Выводим установленный планировщик
-        echo "Установлен планировщик $T для $DISC:"
-        # Выполняем тесты на диске
-        RESULT=$(sync && /sbin/hdparm -tT /dev/$DISC | grep "Timing buffered disk reads")
-        SPEED=$(echo $RESULT | cut -d "=" -f 2 | cut -d " " -f 2)
-        echo "$RESULT"
-        echo "----"
-        # Сравниваем скорости для выбора лучшего планировщика
-        if (( $(echo "$SPEED > $BEST_SPEED" | bc -l) )); then
-            BEST_SPEED=$SPEED
-            BEST_SCHEDULER=$T
+        # Проверяем доступность планировщика
+        if grep -q $T /sys/block/$DISC/queue/scheduler; then
+            echo $T > /sys/block/$DISC/queue/scheduler 2>/dev/null
+            # Проверяем, установился ли планировщик
+            CURRENT_SCHEDULER=$(cat /sys/block/$DISC/queue/scheduler | grep -o '[[]\w*[]]' | tr -d '[]')
+            if [ "$CURRENT_SCHEDULER" == "$T" ]; then
+                echo "Установлен планировщик $T для $DISC:"
+                RESULT=$(sync && /sbin/hdparm -tT /dev/$DISC | grep "Timing buffered disk reads")
+                SPEED=$(echo $RESULT | cut -d "=" -f 2 | cut -d " " -f 2)
+                echo "$RESULT"
+                echo "----"
+                if (( $(echo "$SPEED > $BEST_SPEED" | bc -l) )); then
+                    BEST_SPEED=$SPEED
+                    BEST_SCHEDULER=$T
+                fi
+            else
+                echo "Не удалось установить планировщик $T для $DISC."
+                echo "----"
+            fi
+        else
+            echo "Планировщик $T не доступен для $DISC."
+            echo "----"
         fi
     done
 
-    # Выводим лучший планировщик
     echo "Лучший планировщик для $DISC: $BEST_SCHEDULER с скоростью $BEST_SPEED MB/sec"
-    # Восстанавливаем исходный планировщик
-    echo $ORIG_SCHEDULER > /sys/block/$DISC/queue/scheduler
+    echo $ORIG_SCHEDULER > /sys/block/$DISC/queue/scheduler 2>/dev/null
     echo "Восстановлен исходный планировщик: $ORIG_SCHEDULER"
-    cd $workdir
 }
+
 
 LinPack() {
     cd LinPack
