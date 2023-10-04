@@ -29,6 +29,7 @@ install_programs()
 			["nasm"]="nasm"
 			["base-devel"]="base-devel"
 			["base-devel"]="net-tools"
+            ["gcc"]="gcc"
 			
 		)
 		for package in "${!packages[@]}"; do
@@ -45,6 +46,7 @@ install_programs()
 		arch)
 		declare -A packages=(
 			["hdparm"]="hdparm"
+            ["gcc"]="gcc"
 			["bonnie++"]="bonnie++"
 			["sysstat"]="sysstat"
 			["fio"]="fio"
@@ -184,7 +186,7 @@ remove_programs()
 }
 
 ForkBomb() {
-    echo "ForkBomb" | boxes -d tux -p a1
+    echo "ForkBomb" 
 
     cd "$BASEDIR/ForkBomb"
 
@@ -229,7 +231,12 @@ ForkBomb() {
 main() 
 {
 	BASEDIR=$(dirname "$(realpath "$0")")    
-	print_art 
+    echo "Выбери подпрограмму:"
+    echo "1 - ForkBomb"
+    echo "2 - MemBomb"
+    echo "3 - LimPack"
+    echo "Для выхода нажми - 4"
+
 	read -p "Введи 1-14: " S_Modules
 	case $S_Modules in
 		1) clear; ForkBomb ;;
