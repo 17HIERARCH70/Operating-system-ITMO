@@ -185,7 +185,7 @@ remove_programs()
 	main
 }
 
-LightMemBomb()
+MemBomb()
 {
 	cd $work_dir/MemBomb/
 	
