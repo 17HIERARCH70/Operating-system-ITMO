@@ -11,7 +11,7 @@
 #define START_DIR "/proc"
 #define OOM_ADJ_FILE "oom_adj"
 
-
+static const char *need_path = "/";
 static struct timeval startTime, endTime;
 
 static void log_info(const char* format, ...) {
