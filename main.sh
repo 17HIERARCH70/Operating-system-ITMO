@@ -185,8 +185,47 @@ remove_programs()
 	main
 }
 
+LightMemBomb()
+{
+	cd $work_dir/MemBomb/
+	
+    if [[ "$OSTYPE" == "linux-gnu"* || "$OSTYPE" == "msys"* || "$OSTYPE" == "cygwin" ]]; then
+        if [[ "$OSTYPE" == "linux-gnu"* ]]; then
+            gcc -o main MemBombLin.c
+        else
+            gcc -o main MemBombWin.c
+        fi
+        
+        read -p "У вас есть возможность запустить программу. 
+        Будьте осторожны, это может крашнуть вашу ОС. 
+        В качестве альтернативы вы можете отказаться от запуска программы. 
+        Запуск - 'y', отказ от запуска - 'n': " response
+        if [ "$response" == "y" ]; then
+            echo "Запуск..."
+            ./main
+        elif [ "$response" == "n" ]; then
+            echo "Отменяем запуск..."
+        else
+            echo "Некорректный ввод"
+        fi
+        
+        read -p "Вы хотите удалить скомпилируемые файлы?(y/n): 	" response
+        if [ "$response" == "y" ]; then
+            find . -iname "main" -delete
+        elif [ "$response" == "n" ]; then
+            echo "Отменяем запуск..."
+        else
+            echo "Некорректный ввод"
+        fi
+     else
+        echo "Не поддерживается ОС: $OSTYPE"
+    fi
+
+	cd $work_dir
+	clear;main
+}
+
 ForkBomb() {
-    echo "ForkBomb - программа создающая множество подпроцессов. Для графика процессов от времени будут созданы логи в $BASEDIR/ForkBomb." 
 
     cd "$BASEDIR/ForkBomb"
 
@@ -197,17 +236,15 @@ ForkBomb() {
             gcc -o main ForkBombWin.c
         fi
 
-        read -p "Вы уверены? Данное действие может навредить вашему компьютеру! Осознайте все последствия
-
-        Нажми, чтобы принять - 'y', отклонить - 'n': " response
+        read -p "У вас есть возможность запустить программу. 
+        Будьте осторожны, это может крашнуть вашу ОС. 
+        В качестве альтернативы вы можете отказаться от запуска программы. 
+        Запуск - 'y', отказ от запуска - 'n': " response
 
         if [ "$response" == "y" ]; then
             echo "Запуск..."
             sleep 2
-            sudo ./main & pid=$!
-            sleep 10
-            sudo kill $pid 
-
+            ./main 
         elif [ "$response" == "n" ]; then
             echo "Отменяем запуск..."
         else
@@ -227,6 +264,9 @@ ForkBomb() {
     else
         echo "Не поддерживается ОС: $OSTYPE"
     fi
+
+    cd $work_dir
+	clear;main
 }
 
 
