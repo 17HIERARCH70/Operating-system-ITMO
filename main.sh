@@ -183,7 +183,7 @@ remove_programs() {
 	main
 }
 
-Linpack() {
+LinPack() {
     cd LinPack
     git clone https://github.com/ereyes01/linpack.git
     cd linpack && make
