@@ -114,7 +114,7 @@ FSchecker() {
     echo "FS Test Results" > $logfile
     for fs in "${!images[@]}"; do
         echo "Testing $fs..."
-        result=$(sudo fio --randrepeat=1 --ioengine=libaio --direct=1 --gtod_reduce=1 --name=test --filename=/mnt/$fs/testfile --bs=4k --iodepth=64 --size=0.5G --readwrite=randrw --rwmixread=75 | grep -E "read: IOPS=|write: IOPS=")
+        result=$(sudo fio --randrepeat=1 --ioengine=libaio --direct=1 --gtod_reduce=1 --name=test --filename=/mnt/$fs/testfile --bs=4k --iodepth=64 --size=512M --readwrite=randrw --rwmixread=75 | grep -E "read: IOPS=|write: IOPS=")
         read_iops=$(echo $result | grep -oP 'read: IOPS=\K\d+')
         write_iops=$(echo $result | grep -oP 'write: IOPS=\K\d+')
         results[$fs]=$((read_iops + write_iops))
