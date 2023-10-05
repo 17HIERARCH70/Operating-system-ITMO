@@ -91,7 +91,7 @@ FSchecker() {
         ["ext4"]="/tmp/ext4.img"
     )
     for img in "${images[@]}"; do
-        dd if=/dev/zero of=$img bs=1M count=512
+        dd if=/dev/zero of=$img bs=1M count=5120
     done
     echo "Форматирование образов в выбранные ФС..."
     sudo mkfs.btrfs ${images["btrfs"]}
