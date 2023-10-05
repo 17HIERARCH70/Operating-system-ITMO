@@ -345,15 +345,17 @@ main() {
     echo "2 - MemBomb"
     echo "3 - LinPack"
     echo "4 - Scheduler"
-    echo "Для выхода нажми - 5"
+    echo "5 - FSchecker"
+    echo "Для выхода нажми - 6"
 
-	read -p "Введи 1-5: " Lab
+	read -p "Введи 1-6: " Lab
 	case $Lab in
 		1) clear; ForkBomb ;;
         2) clear; MemBomb ;;
         3) clear; LinPack ;;
         4) clear; Scheduler;;
-		5) clear; exit;;
+        5) clear; FSchecker;;
+		6) clear; exit;;
 	esac
 	main
 }
