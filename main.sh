@@ -91,7 +91,7 @@ FSchecker() {
         ["ext4"]="/tmp/ext4.img"
     )
     for img in "${images[@]}"; do
-        dd if=/dev/zero of=$img bs=1M count=1024
+        dd if=/dev/zero of=$img bs=1G count=2
     done
     echo "Форматирование образов в выбранные ФС..."
     sudo mkfs.btrfs ${images["btrfs"]}
@@ -114,7 +114,7 @@ FSchecker() {
     echo "FS Test Results" > $logfile
     for fs in "${!images[@]}"; do
         echo "Testing $fs..."
-        result=$(sudo fio --randrepeat=1 --ioengine=libaio --direct=1 --gtod_reduce=1 --name=test --filename=/mnt/$fs/testfile --bs=4k --iodepth=64 --size=512M --readwrite=randrw --rwmixread=75 | grep -E "read: IOPS=|write: IOPS=")
+        result=$(sudo fio --randrepeat=1 --ioengine=libaio --direct=1 --gtod_reduce=1 --name=test --filename=/mnt/$fs/testfile --bs=4k --iodepth=64 --size=1G --readwrite=randrw --rwmixread=75 | grep -E "read: IOPS=|write: IOPS=")
         read_iops=$(echo $result | grep -oP 'read: IOPS=\K\d+')
         write_iops=$(echo $result | grep -oP 'write: IOPS=\K\d+')
         results[$fs]=$((read_iops + write_iops))
