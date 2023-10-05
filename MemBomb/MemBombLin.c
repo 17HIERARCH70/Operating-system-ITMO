@@ -16,7 +16,7 @@ void *logMemoryUsage(void *unused) {
     struct rusage r_usage;
 
     while (1) {
-        sleep(0.1);  // Логируем каждые 5 секунд
+        sleep(0.1); 
         getrusage(RUSAGE_SELF, &r_usage);
         logFile = fopen(LOG_FILE, "a+");
         if (logFile) {

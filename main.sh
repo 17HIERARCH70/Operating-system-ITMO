@@ -73,6 +73,74 @@ Require() {
 	esac
 }
 
+FSchecker() {
+    # Установка необходимых утилит
+    sudo apt update
+    sudo apt install -y fio btrfs-tools zfsutils-linux
+
+    # Создание временных файлов и разделов для тестирования
+    declare -A images=(
+        ["btrfs"]="/tmp/btrfs.img"
+        ["zfs"]="/tmp/zfs.img"
+        ["xfs"]="/tmp/xfs.img"
+        ["ext4"]="/tmp/ext4.img"
+    )
+
+    for img in "${images[@]}"; do
+        dd if=/dev/zero of=$img bs=1M count=1024
+    done
+
+    # Форматирование образов в выбранные ФС
+    sudo mkfs.btrfs ${images["btrfs"]}
+    sudo mkfs.xfs ${images["xfs"]}
+    sudo mkfs.ext4 ${images["ext4"]}
+
+    # Подключение файловых систем
+    mkdir -p /mnt/{btrfs,zfs,xfs,ext4}
+    sudo mount -o loop ${images["btrfs"]} /mnt/btrfs
+    sudo mount -o loop ${images["xfs"]} /mnt/xfs
+    sudo mount -o loop ${images["ext4"]} /mnt/ext4
+    sudo zpool create testpool ${images["zfs"]}
+    sudo zfs set mountpoint=/mnt/zfs testpool
+
+    # Ассоциативный массив для хранения результатов
+    declare -A results
+
+    # Тестирование с помощью fio и запись результатов
+    logfile="fs_test_results.log"
+    echo "FS Test Results" > $logfile
+    for fs in "${!images[@]}"; do
+        echo "Testing $fs..."
+        result=$(sudo fio --randrepeat=1 --ioengine=libaio --direct=1 --gtod_reduce=1 --name=test --filename=/mnt/$fs/testfile --bs=4k --iodepth=64 --size=4G --readwrite=randrw --rwmixread=75 | grep -E "read: IOPS=|write: IOPS=")
+        read_iops=$(echo $result | grep -oP 'read: IOPS=\K\d+')
+        write_iops=$(echo $result | grep -oP 'write: IOPS=\K\d+')
+        results[$fs]=$((read_iops + write_iops))
+        echo "$fs Read IOPS: $read_iops, Write IOPS: $write_iops" | tee -a $logfile
+    done
+
+    # Определение лучшей ФС
+    best_fs=""
+    best_score=0
+    for fs in "${!results[@]}"; do
+        if [[ ${results[$fs]} -gt $best_score ]]; then
+            best_score=${results[$fs]}
+            best_fs=$fs
+        fi
+    done
+
+    echo "Best FS based on IOPS: $best_fs" | tee -a $logfile
+
+    # Отключение ФС и очистка
+    sudo umount /mnt/btrfs
+    sudo umount /mnt/xfs
+    sudo umount /mnt/ext4
+    sudo zpool destroy testpool
+    for img in "${images[@]}"; do
+        rm -rf $img
+    done
+
+    cd $workdir
+}
 
 Scheduler() {
     DISC="sda"
@@ -107,7 +175,6 @@ Scheduler() {
     # Выводим лучший планировщик
     echo "Лучший планировщик для $DISC: $BEST_SCHEDULER с скоростью $BEST"
     cd $workdir
-    
 }
 
 LinPack() {
