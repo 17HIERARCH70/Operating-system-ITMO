@@ -83,29 +83,22 @@ Require() {
 }
 
 FSchecker() {
-    # Установка необходимых утилит
-    sudo apt update
-    
-    sudo apt install -y fio btrfs-progs zfsutils-linux
-
-    # Создание временных файлов и разделов для тестирования
+    echo "Создание временных файлов и разделов для тестирования..."
     declare -A images=(
         ["btrfs"]="/tmp/btrfs.img"
         ["zfs"]="/tmp/zfs.img"
         ["xfs"]="/tmp/xfs.img"
         ["ext4"]="/tmp/ext4.img"
     )
-
     for img in "${images[@]}"; do
-        dd if=/dev/zero of=$img bs=1M count=1024
+        dd if=/dev/zero of=$img bs=1M count=512
     done
-
-    # Форматирование образов в выбранные ФС
+    echo "Форматирование образов в выбранные ФС..."
     sudo mkfs.btrfs ${images["btrfs"]}
     sudo mkfs.xfs ${images["xfs"]}
     sudo mkfs.ext4 ${images["ext4"]}
 
-    # Подключение файловых систем
+    echo "Подключение файловых систем"
     mkdir -p /mnt/{btrfs,zfs,xfs,ext4}
     sudo mount -o loop ${images["btrfs"]} /mnt/btrfs
     sudo mount -o loop ${images["xfs"]} /mnt/xfs
@@ -116,7 +109,7 @@ FSchecker() {
     # Ассоциативный массив для хранения результатов
     declare -A results
 
-    # Тестирование с помощью fio и запись результатов
+    echo "Тестирование с помощью fio и запись результатов..."
     logfile="fs_test_results.log"
     echo "FS Test Results" > $logfile
     for fs in "${!images[@]}"; do
@@ -128,7 +121,7 @@ FSchecker() {
         echo "$fs Read IOPS: $read_iops, Write IOPS: $write_iops" | tee -a $logfile
     done
 
-    # Определение лучшей ФС
+    echo "Определение лучшей ФС..."
     best_fs=""
     best_score=0
     for fs in "${!results[@]}"; do
@@ -139,8 +132,8 @@ FSchecker() {
     done
 
     echo "Best FS based on IOPS: $best_fs" | tee -a $logfile
-
-    # Отключение ФС и очистка
+    sleep 3
+    echo "Отключение ФС и очистка"
     sudo umount /mnt/btrfs
     sudo umount /mnt/xfs
     sudo umount /mnt/ext4
