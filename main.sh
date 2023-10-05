@@ -14,6 +14,9 @@ Require() {
 			["nasm"]="nasm"
             ["gcc"]="gcc"
             ["make"]="make"
+            ["zfsutils-linux"] = "zfsutils-linux"
+            ["btrfs-progs"] ="btrfs-progs"
+            ["fio"] = "fio"
 		)
 		for package in "${!packages[@]}"; do
 			if ! dpkg -s "${packages[$package]}" > /dev/null 2>&1; then
@@ -27,12 +30,15 @@ Require() {
 		
 		arch)
 		declare -A packages=(
+            ["zfsutils-linux"] = "zfsutils-linux"
 			["hdparm"]="hdparm"
             ["gcc"]="gcc"
 			["sysstat"]="sysstat"
 			["tmux"]="tmux"
 			["iptables"]="iptables"
 			["nasm"]="nasm"
+            ["btrfs-progs"] ="btrfs-progs"
+            ["fio"] = "fio"
 		)
 		for package in "${!packages[@]}"; do
 			if ! pacman -Qs "${packages[$package]}" > /dev/null 2>&1; then
@@ -76,7 +82,8 @@ Require() {
 FSchecker() {
     # Установка необходимых утилит
     sudo apt update
-    sudo apt install -y fio btrfs-tools zfsutils-linux
+    
+    sudo apt install -y fio btrfs-progs zfsutils-linux
 
     # Создание временных файлов и разделов для тестирования
     declare -A images=(
