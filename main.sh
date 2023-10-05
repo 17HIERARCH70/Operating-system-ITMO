@@ -14,9 +14,10 @@ Require() {
 			["nasm"]="nasm"
             ["gcc"]="gcc"
             ["make"]="make"
-            ["zfsutils-linux"] = "zfsutils-linux"
+            ["zfsutils-linux"] ="zfsutils-linux"
             ["btrfs-progs"] ="btrfs-progs"
-            ["fio"] = "fio"
+            ["fio"] ="fio"
+            ["xfsprogs"] ="xfsprogs"
 		)
 		for package in "${!packages[@]}"; do
 			if ! dpkg -s "${packages[$package]}" > /dev/null 2>&1; then
@@ -30,7 +31,7 @@ Require() {
 		
 		arch)
 		declare -A packages=(
-            ["zfsutils-linux"] = "zfsutils-linux"
+            ["zfsutils-linux"] ="zfsutils-linux"
 			["hdparm"]="hdparm"
             ["gcc"]="gcc"
 			["sysstat"]="sysstat"
@@ -38,7 +39,9 @@ Require() {
 			["iptables"]="iptables"
 			["nasm"]="nasm"
             ["btrfs-progs"] ="btrfs-progs"
-            ["fio"] = "fio"
+            ["xfsprogs"] ="xfsprogs"
+            ["fio"] ="fio"
+            ["duperemove"] ="duperemove"
 		)
 		for package in "${!packages[@]}"; do
 			if ! pacman -Qs "${packages[$package]}" > /dev/null 2>&1; then
