@@ -26,7 +26,6 @@ Require() {
 				echo "$package уже установлен."
 			fi
 		done
-		sudo apt install boxes
 		;;
 		
 		arch)
