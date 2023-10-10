@@ -181,7 +181,6 @@ Scheduler() {
 }
 
 LinPack() {
-    cd LinPack
     git clone https://github.com/ereyes01/linpack.git
     cd linpack && make
 
@@ -231,23 +230,24 @@ LinPack() {
     cd $BASEDIR
     cd linpack
 
+    echo "Дефолт запуск"
     for ((i=1; i<=2; i++)); do
         ./linpack
     done
-
+    echo "nice -n -19 запуск"
     for ((i=1; i<=2; i++)); do
         nice -n -19 ./linpack
     done
-
+    echo "nice -n 20 запуск"
     for ((i=1; i<=2; i++)); do
         nice -n 20 ./linpack
     done
-
+    echo "taskset -c 0 запуск и taskset -c 1,2 "
     for ((i=1; i<=2; i++)); do
         taskset -c 0 ./linpack
         taskset -c 1,2 ./linpack
     done
-
+    echo "Дефолт запуск"
     for ((i=1; i<=2; i++)); do
         ./linpack
     done
