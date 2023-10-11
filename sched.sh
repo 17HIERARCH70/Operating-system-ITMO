@@ -1,106 +1,84 @@
 #!/bin/bash
 
-BLOCK()
-{
-  echo "Выберите диск с доступными планировщиками ввода-вывода"
-  lsblk -l;
-  read -p "Введите имя диска (sda/sdb/..): " BLOCK_
-  schedulers="/sys/block/$BLOCK_/queue/scheduler"
-  clear
-}
+BLOCK=""
+BASEDIR="/tmp"
 
-A_S()
-{
-  echo "Доступные планировщики ввода-вывода"
-  echo "[имя] - планировщик по умолчанию"
-  awk -v OFS="" -v FPAT='\\[[^]]*\\]|"[^"]*"|[^[:space:]]+' '{
-    for (i=1; i<=NF; i++) 
-    {
-      gsub(/^[]|[]$/, $i)
-      $i =  i ".\""$i"\"\n"
-    }
-  }' "$schedulers"
-}
-
-T_S()
-{
-  echo "Тесты планировщика ввода-вывода"
-  wget https://www.kernel.org/pub/linux/kernel/v3.x/linux-3.13.7.tar.xz
-  for T in none mq-deadline kyber bfq;
-  do
-    sudo rm -rf "$BASEDIR/linux-3.13.7"
-    sudo rm "$BASEDIR/benchfile"
-    echo 3 > /proc/sys/vm/drop_caches
-    echo "Планировщик ---> $T"
-    echo "Информация по IOSTAT"
+I_B() {
+    echo -e "${BPurple}I/O Scheduler Information${Color_Off}"
     iostat -p
-    echo "Тестирование BONNIE"
-    mkdir boniee_test_dir
-    bonnie++ -u root -d "$BASEDIR/boniee_test_dir"
-    rm -rf boniee_test_dir
-    echo 3 > /proc/sys/vm/drop_caches
-    echo "Тест FIO. Случайное чтение/запись"
-    sudo fio --filename="$BASEDIR/path" --size=1GB --direct=1 --rw=randrw --bs=4k --ioengine=libaio --iodepth=256 --runtime=10 --numjobs=4 --time_based --group_reporting --name=job_name --eta-newline=1
-    echo 3 > /proc/sys/vm/drop_caches
-    echo "Тест HDPARM"
-    echo $T > /sys/block/$BLOCK_/queue/scheduler; 
-    cat /sys/block/$BLOCK_/queue/scheduler; 
-    sync && /sbin/hdparm -tT /dev/$BLOCK_ && echo "----"; 
-    echo 3 > /proc/sys/vm/drop_caches
-    echo "Тест DD"
-    for i in 1 2 3 4 5; 
-    do
-      time dd if="$BASEDIR/path" of="./benchfile" bs=1M count=19900 conv=fdatasync,notrunc
-      echo 3 > /proc/sys/vm/drop_caches
-    done
-    echo 3 > /proc/sys/vm/drop_caches
-    echo "Тест TAR"
-    for i in 1 2 3 4 5; 
-    do
-      time tar xJf linux-3.13.7.tar.xz
-      echo 3 > /proc/sys/vm/drop_caches
-    done
-  done
-  rm "$BASEDIR/path"
-  rm -rf "$BASEDIR/linux-3.13.7"
-  rm "$BASEDIR/benchfile"
-  rm "$BASEDIR/linux-3.13.7.tar.xz"
+    echo -e "${BYellow}Current I/O Scheduler:${Color_Off}"
+    cat /sys/block/$BLOCK/queue/scheduler
+    echo -e "${Green}Disk Information${Color_Off}"
+    lsblk -l
 }
 
-Schedulers()
-{
-  echo "Меню планировщиков ввода-вывода"
-  echo "Выберите опцию:"
-  echo "1. Просмотр информации о системе"
-  echo "2. Доступные планировщики ввода-вывода"
-  echo "3. Запустить тесты планировщика ввода-вывода"
-  echo "4. Вернуться в главное меню"
-  echo "5. Выход"
-  read -p "Введите 1-5: " Switch_Option
-  case $Switch_Option in
-    1) clear & I_B;;
-    2) clear & A_S;;
-    3) clear & T_S;;
-    4) clear & main;;
-    5) clear; exit;;
-  esac
-  Schedulers
+T_S() {
+    echo "I/O Scheduler Tests" | boxes -d tux -p a1
+    wget https://www.kernel.org/pub/linux/kernel/v3.x/linux-3.13.7.tar.xz -P $BASEDIR
+
+    for T in none mq-deadline kyber bfq; do
+        rm -rf $BASEDIR/linux-3.13.7
+        rm $BASEDIR/benchfile
+
+        echo 3 > /proc/sys/vm/drop_caches
+        echo -e "${BYellow}SCHEDULER\t--->\t$T${Color_Off}"
+        echo -e "${BPurple}IOSTAT_INFORMATION${Color_Off}"
+        iostat -p
+
+        echo -e "${BPurple}TEST_BONNIE${Color_Off}"
+        mkdir $BASEDIR/boniee_test_dir
+        bonnie++ -u root -d $BASEDIR/boniee_test_dir
+        rm -rf $BASEDIR/boniee_test_dir
+        echo 3 > /proc/sys/vm/drop_caches
+
+        echo -e "${BPurple}TEST_FIO.Test random read/write${Color_Off}"
+        sudo fio --filename=$BASEDIR/path --size=1GB --direct=1 --rw=randrw --bs=4k --ioengine=libaio --iodepth=256 --runtime=10 --numjobs=4 --time_based --group_reporting --name=job_name --eta-newline=1
+        echo 3 > /proc/sys/vm/drop_caches
+
+        echo -e "${BPurple}TEST_HDPARM${Color_Off}"
+        echo $T > /sys/block/$BLOCK/queue/scheduler
+        cat /sys/block/$BLOCK/queue/scheduler
+        sync && /sbin/hdparm -tT /dev/$BLOCK
+        echo "----"
+        echo 3 > /proc/sys/vm/drop_caches
+
+        echo -e "${BPurple}TEST_DD${Color_Off}"
+        for i in 1 2 3 4 5; do
+            time dd if=$BASEDIR/path of=./benchfile bs=1M count=19900 conv=fdatasync,notrunc
+            echo 3 > /proc/sys/vm/drop_caches
+        done
+        echo 3 > /proc/sys/vm/drop_caches
+
+        echo -e "${BPurple}TEST_TAR${Color_Off}"
+        for i in 1 2 3 4 5; do
+            time tar xJf $BASEDIR/linux-3.13.7.tar.xz
+            echo 3 > /proc/sys/vm/drop_caches
+        done
+    done
+    rm $BASEDIR/path
+    rm -rf $BASEDIR/linux-3.13.7
+    rm $BASEDIR/benchfile
+    rm $BASEDIR/linux-3.13.7.tar.xz
 }
 
-main()
-{
-  BASEDIR=$(dirname "$0")
-  clear
-  echo "Главное меню"
-  echo "1. Информация о диске"
-  echo "2. Планировщики ввода-вывода"
-  echo "3. Выход"
-  read -p "Введите 1-3: " choice
-  case $choice in
-    1) clear & I_B;;
-    2) clear & Schedulers;;
-    3) clear; exit;;
-  esac
+main() {
+    clear
+    echo -e "${Green}Choose disk which has I/O Schedulers${Color_Off}"
+    lsblk -l
+    read -p "Enter disk name (sda/sdb/..): " BLOCK
+    clear
+
+    while true; do
+        echo -e "${BPurple}\t\t\tI/O Schedulers Menu\nChoose option:${Color_Off}\n\t${Green}1. View system information\n\t2. Start I/O Scheduler tests\n\t3. Exit${Color_Off}"
+        read -p "Enter 1-3: " choice
+
+        case $choice in
+            1) clear; I_B ;;
+            2) clear; T_S ;;
+            3) exit ;;
+            *) echo "Invalid option, please select a valid option." ;;
+        esac
+    done
 }
 
 main
