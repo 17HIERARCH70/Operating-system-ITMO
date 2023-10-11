@@ -179,7 +179,7 @@ Scheduler() {
     cd $workdir
 }
 
-    LinPack() {
+LinPack() {
         git clone https://github.com/ereyes01/linpack.git
         cd linpack && make
         clear
@@ -255,7 +255,7 @@ Scheduler() {
         read -p "Тестирование завершено. Проверьте результаты в './logs'. Нажмите Enter, чтобы удалить все тестовые файлы и очистить консоль."
         rm -rf $BASEDIR/linpack
         cd $workdir
-    }
+}
 
 MemBomb() {
 	cd $work_dir/MemBomb/
