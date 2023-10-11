@@ -2,81 +2,76 @@
 
 BLOCK=""
 BASEDIR="/tmp"
+LOG_FILE="/tmp/io_scheduler_tests.log"
 
 I_B() {
-    echo -e "${BPurple}I/O Scheduler Information${Color_Off}"
+    echo "Информация о планировщике ввода-вывода"
     iostat -p
-    echo -e "${BYellow}Current I/O Scheduler:${Color_Off}"
+    echo "Текущий планировщик ввода-вывода:"
     cat /sys/block/$BLOCK/queue/scheduler
-    echo -e "${Green}Disk Information${Color_Off}"
+    echo "Информация о диске"
     lsblk -l
 }
 
-T_S() {
-    echo "I/O Scheduler Tests" | boxes -d tux -p a1
-    wget https://www.kernel.org/pub/linux/kernel/v3.x/linux-3.13.7.tar.xz -P $BASEDIR
+run_io_tests() {
+    scheduler_name="$1"
+    echo "Планировщик ---> $scheduler_name" >> $LOG_FILE
 
-    for T in none mq-deadline kyber bfq; do
-        rm -rf $BASEDIR/linux-3.13.7
-        rm $BASEDIR/benchfile
+    echo "Информация о вводе-выводе" >> $LOG_FILE
+    iostat -p >> $LOG_FILE
 
-        echo 3 > /proc/sys/vm/drop_caches
-        echo -e "${BYellow}SCHEDULER\t--->\t$T${Color_Off}"
-        echo -e "${BPurple}IOSTAT_INFORMATION${Color_Off}"
-        iostat -p
+    echo "Тест с Bonnie" >> $LOG_FILE
+    mkdir $BASEDIR/boniee_test_dir
+    bonnie++ -u root -d $BASEDIR/boniee_test_dir >> $LOG_FILE
+    rm -rf $BASEDIR/boniee_test_dir
 
-        echo -e "${BPurple}TEST_BONNIE${Color_Off}"
-        mkdir $BASEDIR/boniee_test_dir
-        bonnie++ -u root -d $BASEDIR/boniee_test_dir
-        rm -rf $BASEDIR/boniee_test_dir
-        echo 3 > /proc/sys/vm/drop_caches
+    echo "Тест FIO. Случайное чтение/запись" >> $LOG_FILE
+    sudo fio --filename=$BASEDIR/path --size=1GB --direct=1 --rw=randrw --bs=4k --ioengine=libaio --iodepth=256 --runtime=10 --numjobs=4 --time_based --group_reporting --name=job_name --eta-newline=1 >> $LOG_FILE
 
-        echo -e "${BPurple}TEST_FIO.Test random read/write${Color_Off}"
-        sudo fio --filename=$BASEDIR/path --size=1GB --direct=1 --rw=randrw --bs=4k --ioengine=libaio --iodepth=256 --runtime=10 --numjobs=4 --time_based --group_reporting --name=job_name --eta-newline=1
-        echo 3 > /proc/sys/vm/drop_caches
+    echo "Тест HDPARM" >> $LOG_FILE
+    echo $scheduler_name > /sys/block/$BLOCK/queue/scheduler
+    cat /sys/block/$BLOCK/queue/scheduler >> $LOG_FILE
+    sync && /sbin/hdparm -tT /dev/$BLOCK >> $LOG_FILE
 
-        echo -e "${BPurple}TEST_HDPARM${Color_Off}"
-        echo $T > /sys/block/$BLOCK/queue/scheduler
-        cat /sys/block/$BLOCK/queue/scheduler
-        sync && /sbin/hdparm -tT /dev/$BLOCK
-        echo "----"
-        echo 3 > /proc/sys/vm/drop_caches
-
-        echo -e "${BPurple}TEST_DD${Color_Off}"
-        for i in 1 2 3 4 5; do
-            time dd if=$BASEDIR/path of=./benchfile bs=1M count=19900 conv=fdatasync,notrunc
-            echo 3 > /proc/sys/vm/drop_caches
-        done
-        echo 3 > /proc/sys/vm/drop_caches
-
-        echo -e "${BPurple}TEST_TAR${Color_Off}"
-        for i in 1 2 3 4 5; do
-            time tar xJf $BASEDIR/linux-3.13.7.tar.xz
-            echo 3 > /proc/sys/vm/drop_caches
-        done
+    echo "Тест DD" >> $LOG_FILE
+    for i in 1 2 3 4 5; do
+        time dd if=$BASEDIR/path of=./benchfile bs=1M count=19900 conv=fdatasync,notrunc >> $LOG_FILE
     done
-    rm $BASEDIR/path
-    rm -rf $BASEDIR/linux-3.13.7
-    rm $BASEDIR/benchfile
-    rm $BASEDIR/linux-3.13.7.tar.xz
+
+    echo "Тест TAR" >> $LOG_FILE
+    for i in 1 2 3 4 5; do
+        time tar xJf $BASEDIR/linux-3.13.7.tar.xz >> $LOG_FILE
+    done
 }
 
 main() {
     clear
-    echo -e "${Green}Choose disk which has I/O Schedulers${Color_Off}"
+    echo "Выберите диск с планировщиком ввода-вывода"
     lsblk -l
-    read -p "Enter disk name (sda/sdb/..): " BLOCK
+    read -p "Введите имя диска (sda/sdb/..): " BLOCK
     clear
 
     while true; do
-        echo -e "${BPurple}\t\t\tI/O Schedulers Menu\nChoose option:${Color_Off}\n\t${Green}1. View system information\n\t2. Start I/O Scheduler tests\n\t3. Exit${Color_Off}"
-        read -p "Enter 1-3: " choice
+        echo "Меню планировщика ввода-вывода"
+        echo "Выберите опцию:"
+        echo "1. Просмотр системной информации"
+        echo "2. Начать тесты планировщика ввода-вывода"
+        echo "3. Выход"
+
+        read -p "Введите 1-3: " choice
 
         case $choice in
             1) clear; I_B ;;
-            2) clear; T_S ;;
+            2) clear;
+               echo "Запуск тестов планировщика ввода-вывода..." >> $LOG_FILE
+               > $LOG_FILE  # Очистить лог-файл
+               for scheduler in none mq-deadline kyber bfq; do
+                   run_io_tests $scheduler
+               done
+               echo "Тесты планировщика ввода-вывода завершены. Результаты можно найти в $LOG_FILE."
+               ;;
             3) exit ;;
-            *) echo "Invalid option, please select a valid option." ;;
+            *) echo "Неверная опция. Выберите корректную опцию." ;;
         esac
     done
 }
