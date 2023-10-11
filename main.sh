@@ -179,83 +179,83 @@ Scheduler() {
     cd $workdir
 }
 
-LinPack() {
-    git clone https://github.com/ereyes01/linpack.git
-    cd linpack && make
-    clear
-    
-    restore_default() {
-        local param_name="$1"
-        local default_value="$2"
-        echo "$default_value" > "/proc/sys/kernel/sched_$param_name"
-    }
+    LinPack() {
+        git clone https://github.com/ereyes01/linpack.git
+        cd linpack && make
+        clear
+        
+        restore_default() {
+            local param_name="$1"
+            local default_value="$2"
+            echo "$default_value" > "/proc/sys/kernel/sched_$param_name"
+        }
 
-    cd /proc/sys/kernel/
-    for file in sched_*; do
-        param_name="${file#sched_}"
-        current_value=$(cat "$file")
-        echo "sched_$param_name: $current_value"
-    done
+        cd /proc/sys/kernel/
+        for file in sched_*; do
+            param_name="${file#sched_}"
+            current_value=$(cat "$file")
+            echo "sched_$param_name: $current_value"
+        done
 
-    param_list=$(ls sched_* | sed 's/sched_//')
-    echo "Введите имя параметра для изменения (или 'q' для выхода) без 'sched_':"
-    read -p "" chosen_param
+        param_list=$(ls sched_* | sed 's/sched_//')
+        echo "Введите имя параметра для изменения (или 'q' для выхода) без 'sched_':"
+        read -p "" chosen_param
 
-    while [[ "$chosen_param" != "q" ]]; do
-        if [[ "$param_list" =~ (^|[[:space:]])"$chosen_param"($|[[:space:]]) ]]; then
-            current_value=$(cat "sched_$chosen_param")
-            echo "Текущее значение '$chosen_param': $current_value. Введите новое значение:" 
-            read -p "" new_value
-            echo "$new_value" > "sched_$chosen_param"
-            echo "Значение параметра '$chosen_param' изменено на '$new_value'."
-        else
-            echo "Неверное имя параметра. Попробуйте еще раз."
+        while [[ "$chosen_param" != "q" ]]; do
+            if [[ "$param_list" =~ (^|[[:space:]])"$chosen_param"($|[[:space:]]) ]]; then
+                current_value=$(cat "sched_$chosen_param")
+                echo "Текущее значение '$chosen_param': $current_value. Введите новое значение:" 
+                read -p "" new_value
+                sudo echo "$new_value" > "sched_$chosen_param"
+                echo "Значение параметра '$chosen_param' изменено на '$new_value'."
+            else
+                echo "Неверное имя параметра. Попробуйте еще раз."
+            fi
+
+            echo "Введите имя параметра для изменения (или 'q' для выхода):"
+            read -p "" chosen_param
+        done
+
+        echo "Вы хотите восстановить значения по умолчанию? (y/n):"
+        read -p "" restore_default_choice
+
+        if [[ "$restore_default_choice" == "y" ]]; then
+            for param in $param_list; do
+                default_value=$(cat "sched_$param")
+                restore_default "$param" "$default_value"
+                echo "Значение параметра '$param' восстановлено по умолчанию: $default_value"
+            done
         fi
 
-        echo "Введите имя параметра для изменения (или 'q' для выхода):"
-        read -p "" chosen_param
-    done
+        cd $BASEDIR
+        cd linpack
 
-    echo "Вы хотите восстановить значения по умолчанию? (y/n):"
-    read -p "" restore_default_choice
-
-    if [[ "$restore_default_choice" == "y" ]]; then
-        for param in $param_list; do
-            default_value=$(cat "sched_$param")
-            restore_default "$param" "$default_value"
-            echo "Значение параметра '$param' восстановлено по умолчанию: $default_value"
+        echo "Дефолт запуск"
+        for ((i=1; i<=2; i++)); do
+            ./linpack
         done
-    fi
+        echo "nice -n -19 запуск"
+        for ((i=1; i<=2; i++)); do
+            nice -n -19 ./linpack
+        done
+        echo "nice -n 20 запуск"
+        for ((i=1; i<=2; i++)); do
+            nice -n 20 ./linpack
+        done
+        echo "taskset -c 0 запуск и taskset -c 1,2 "
+        for ((i=1; i<=2; i++)); do
+            taskset -c 0 ./linpack
+            taskset -c 1,2 ./linpack
+        done
+        echo "Дефолт запуск"
+        for ((i=1; i<=2; i++)); do
+            ./linpack
+        done
 
-    cd $BASEDIR
-    cd linpack
-
-    echo "Дефолт запуск"
-    for ((i=1; i<=2; i++)); do
-        ./linpack
-    done
-    echo "nice -n -19 запуск"
-    for ((i=1; i<=2; i++)); do
-        nice -n -19 ./linpack
-    done
-    echo "nice -n 20 запуск"
-    for ((i=1; i<=2; i++)); do
-        nice -n 20 ./linpack
-    done
-    echo "taskset -c 0 запуск и taskset -c 1,2 "
-    for ((i=1; i<=2; i++)); do
-        taskset -c 0 ./linpack
-        taskset -c 1,2 ./linpack
-    done
-    echo "Дефолт запуск"
-    for ((i=1; i<=2; i++)); do
-        ./linpack
-    done
-
-    read -p "Тестирование завершено. Проверьте результаты в './logs'. Нажмите Enter, чтобы удалить все тестовые файлы и очистить консоль."
-    rm -rf $BASEDIR/linpack
-    cd $workdir
-}
+        read -p "Тестирование завершено. Проверьте результаты в './logs'. Нажмите Enter, чтобы удалить все тестовые файлы и очистить консоль."
+        rm -rf $BASEDIR/linpack
+        cd $workdir
+    }
 
 MemBomb() {
 	cd $work_dir/MemBomb/
