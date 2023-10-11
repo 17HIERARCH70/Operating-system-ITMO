@@ -145,41 +145,8 @@ FSchecker() {
 }
 
 Scheduler() {
-    DISC="sda"
-    ORIG_SCHEDULER=$(cat /sys/block/$DISC/queue/scheduler | grep -o '[[]\w*[]]' | tr -d '[]')
-    echo "Текущий планировщик для $DISC: $ORIG_SCHEDULER"
-    echo "----"
-
-    BEST_SCHEDULER=""
-    BEST_SPEED=0
-
-    for T in noop deadline cfq; do
-    # Устанавливаем планировщик и проверяем успешность выполнения
-    if echo $T > /sys/block/$DISC/queue/scheduler 2>/dev/null; then
-        # Выводим установленный планировщик
-        echo "Установлен планировщик $T для $DISC:"
-        # Выполняем тесты на диске
-        sync
-        RESULT=$(/sbin/hdparm -tT /dev/$DISC | grep "Timing buffered disk reads")
-        SPEED=$(echo $RESULT | awk '{print $5}')
-        echo "$RESULT"
-        echo "----"
-        # Сравниваем скорости для выбора лучшего планировщика
-        if (( $(echo "$SPEED > $BEST_SPEED" | bc -l) )); then
-            BEST_SPEED=$SPEED
-            BEST_SCHEDULER=$T
-        fi
-    else
-        echo "Не удалось установить планировщик $T для $DISC"
-        echo "----"
-    fi
-    done
-
-
-    # Выводим лучший планировщик
-    echo "Лучший планировщик для $DISC: $BEST_SCHEDULER с скоростью $BEST_SPEED"
-
-    cd $workdir
+    chmod +x sched.sh
+    sudo ./sched.sh
 }
 
 LinPack() {
