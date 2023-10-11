@@ -182,7 +182,8 @@ Scheduler() {
 LinPack() {
     git clone https://github.com/ereyes01/linpack.git
     cd linpack && make
-
+    clear
+    
     restore_default() {
         local param_name="$1"
         local default_value="$2"
