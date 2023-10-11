@@ -155,12 +155,13 @@ Scheduler() {
 
     for T in noop deadline cfq; do
         # Устанавливаем планировщик и проверяем успешность выполнения
-        if echo $T > /sys/block/$DISC/queue/scheduler 2>/dev/null; then
+        if echo $T > /sys/block/$DISC/queue/scheduler; then
             # Выводим установленный планировщик
             echo "Установлен планировщик $T для $DISC:"
             # Выполняем тесты на диске
-            RESULT=$(sync && /sbin/hdparm -tT /dev/$DISC | grep "Timing buffered disk reads")
-            SPEED=$(echo $RESULT | cut -d "=" -f 2 | cut -d " " -f 2)
+            RESULT=$(/sbin/hdparm -tT /dev/$DISC | grep "Timing buffered disk reads")
+            SPEED=$(echo $RESULT | awk '{print $5}')
+
             echo "$RESULT"
             echo "----"
             # Сравниваем скорости для выбора лучшего планировщика
@@ -175,7 +176,8 @@ Scheduler() {
     done
 
     # Выводим лучший планировщик
-    echo "Лучший планировщик для $DISC: $BEST_SCHEDULER с скоростью $BEST"
+    echo "Лучший планировщик для $DISC: $BEST_SCHEDULER с скоростью $BEST_SPEED"
+
     cd $workdir
 }
 
