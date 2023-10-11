@@ -14,7 +14,7 @@ I_B() {
 }
 
 T_S() {
-    echo "Тестирование планировщиков ввода-вывода" >> $LOGFILE
+    echo "Тестирование планировщиков ввода-вывода"
     wget https://www.kernel.org/pub/linux/kernel/v3.x/linux-3.13.7.tar.xz -P $BASEDIR
 
     for T in none mq-deadline kyber bfq; do
@@ -22,36 +22,37 @@ T_S() {
         rm $BASEDIR/benchfile
 
         echo 3 > /proc/sys/vm/drop_caches
-        echo "Планировщик -> $T" >> $LOGFILE
-        echo "Информация о диске" >> $LOGFILE
-        iostat -p >> $LOGFILE
+        echo "Планировщик -> $T"
+        echo "Информация о диске"
+        iostat -p
 
-        echo "Тестирование Bonnie++" >> $LOGFILE
+        echo "Тестирование Bonnie++"
         mkdir $BASEDIR/boniee_test_dir
-        bonnie++ -u root -d $BASEDIR/boniee_test_dir >> $LOGFILE
+        bonnie++ -u root -d $BASEDIR/boniee_test_dir
         rm -rf $BASEDIR/boniee_test_dir
         echo 3 > /proc/sys/vm/drop_caches
 
-        echo "Тестирование FIO" >> $LOGFILE
-        sudo fio --filename=$BASEDIR/path --size=1GB --direct=1 --rw=randrw --bs=4k --ioengine=libaio --iodepth=256 --runtime=10 --numjobs=4 --time_based --group_reporting --name=job_name --eta-newline=1 >> $LOGFILE
+        echo "Тестирование FIO"
+        sudo fio --filename=$BASEDIR/path --size=1GB --direct=1 --rw=randrw --bs=4k --ioengine=libaio --iodepth=256 --runtime=10 --numjobs=4 --time_based --group_reporting --name=job_name --eta-newline=1
+
         echo 3 > /proc/sys/vm/drop_caches
 
-        echo "Тестирование HDPARM" >> $LOGFILE
+        echo "Тестирование HDPARM"
         echo $T > /sys/block/$BLOCK/queue/scheduler
-        cat /sys/block/$BLOCK/queue/scheduler >> $LOGFILE
-        sync && /sbin/hdparm -tT /dev/$BLOCK >> $LOGFILE
-        echo "----" >> $LOGFILE
+        cat /sys/block/$BLOCK/queue/scheduler
+        sync && /sbin/hdparm -tT /dev/$BLOCK
+        echo "----"
         echo 3 > /proc/sys/vm/drop_caches
 
-        echo "Тестирование DD" >> $LOGFILE
+        echo "Тестирование DD"
         for i in 1 2 3 4 5; do
-            time dd if=$BASEDIR/path of=./benchfile bs=1M count=19900 conv=fdatasync,notrunc >> $LOGFILE
+            time dd if=$BASEDIR/path of=./benchfile bs=1M count=19900 conv=fdatasync,notrunc
             echo 3 > /proc/sys/vm/drop_caches
         done
 
-        echo "Тестирование TAR" >> $LOGFILE
+        echo "Тестирование TAR"
         for i in 1 2 3 4 5; do
-            time tar xJf $BASEDIR/linux-3.13.7.tar.xz >> $LOGFILE
+            time tar xJf $BASEDIR/linux-3.13.7.tar.xz
             echo 3 > /proc/sys/vm/drop_caches
         done
     done
@@ -63,7 +64,8 @@ T_S() {
 
 find_best_scheduler() {
     echo "По результатам тестирования наилучший планировщик ввода-вывода:"
-    cat $LOGFILE | grep "Тестирование HDPARM" | sed -n -e '/Планировщик ->/!{p;d;};N;s/\(Планировщик ->\)\(.*\)\(\nИнформация о диске\)\(.*\)\(\nТестирование HDPARM\)\(.*\)\(\n\)/\2/p'
+    best_scheduler=$(cat $LOGFILE | grep "Тестирование HDPARM" | sed -n -e '/Планировщик ->/!{p;d;};N;s/\(Планировщик ->\)\(.*\)\(\nИнформация о диске\)\(.*\)\(\nТестирование HDPARM\)\(.*\)\(\n\)/\2/p')
+    echo "$best_scheduler"
 }
 
 main() {
