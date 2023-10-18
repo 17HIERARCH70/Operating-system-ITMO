@@ -76,7 +76,7 @@ Require() {
 		;;
 		*)
 		echo "Не удалось определить менеджер пакетов для этой операционной системы."
-		exit 1
+		
 		;;
 	esac
 }
@@ -144,7 +144,33 @@ FSchecker() {
     cd $workdir
 }
 
+MallocFree() {
+    cd $work_dir/MallocFree
+    gcc -o MallocFree MallocFree.c
+
+    read -p "У вас есть возможность запустить программу. 
+        Запуск - 'y', отказ от запуска - 'n': " response
+        if [ "$response" == "y" ]; then 
+        echo "Запуск..."
+        sleep 2
+        ./MallocFree
+        elif [ "$response" == "n" ]; then
+            echo "Отменяем запуск..."
+            rm MallocFree
+        else
+            echo "Некорректный ввод"
+        fi
+    sleep 5
+    rm MallocFree
+    cd $work_dir
+	clear
+    echo "Был создан memory_allocation_log"
+    main
+}
+
+
 Scheduler() {
+    cd $work_dir/Sched
     chmod +x sched.sh
     sudo ./sched.sh
 }
@@ -319,16 +345,18 @@ main() {
     echo "3 - LinPack"
     echo "4 - Scheduler"
     echo "5 - FSchecker"
-    echo "Для выхода нажми - 6"
+    echo "6 - MallocFree"
+    echo "Для выхода нажми - 7"
 
-	read -p "Введи 1-6: " Lab
+	read -p "Введи 1-7: " Lab
 	case $Lab in
 		1) clear; ForkBomb ;;
         2) clear; MemBomb ;;
         3) clear; LinPack ;;
         4) clear; Scheduler;;
         5) clear; FSchecker;;
-		6) clear; exit;;
+        6) clear; MallocFree;;
+		7) clear; exit;;
 	esac
 	main
 }
