@@ -182,15 +182,6 @@ AllocTests() {
     main
 }
 
-BLOCK()
-{
-	echo "Выберите диск, для которого нужно настроить планировщик ввода-вывода"
-	lsblk -l
-	read -p "Введите имя диска (sda/sdb/..): " BLOCK_
-	schedulers=/sys/block/$BLOCK_/queue/scheduler
-	clear
-}
-
 Scheduler() {
     sudo modprobe bfq
     sudo modprobe kyber-iosched

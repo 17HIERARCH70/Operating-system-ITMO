@@ -178,6 +178,15 @@ C_D_Scheduler()
 	A_S_After_Change
 }
 
+BLOCK()
+{
+	echo "Выберите диск, для которого нужно настроить планировщик ввода-вывода"
+	lsblk -l
+	read -p "Введите имя диска (sda/sdb/..): " BLOCK_
+	schedulers=/sys/block/$BLOCK_/queue/scheduler
+	clear
+}
+
 Schedulers()
 {
     
@@ -204,4 +213,4 @@ Schedulers()
 	Schedulers
 }
 
-Schedulers
+BLOCK ; clear ; Schedulers
