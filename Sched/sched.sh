@@ -204,13 +204,12 @@ Schedulers()
 	case $Switch_Option in
 		1) clear & I_B;;
 		2) clear & A_S;;
-		3) clear; C_D_Scheduler ;;
-		4) clear ; C_P_Of_Schedulers;;
-		5) clear & T_S;;
+		3) BLOCK; C_D_Scheduler ;;
+		4) BLOCK ; C_P_Of_Schedulers;;
+		5) BLOCK & T_S;;
 		6) clear ; exit;;
 		7) clear ; exit;;
 	esac
 	Schedulers
 }
-
-BLOCK ; clear ; Schedulers
+clear ; Schedulers
