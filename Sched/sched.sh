@@ -206,7 +206,7 @@ Schedulers()
 		2) clear & A_S;;
 		3) BLOCK; C_D_Scheduler ;;
 		4) BLOCK ; C_P_Of_Schedulers;;
-		5) BLOCK & T_S;;
+		5) BLOCK ; T_S;;
 		6) clear ; exit;;
 		7) clear ; exit;;
 	esac
