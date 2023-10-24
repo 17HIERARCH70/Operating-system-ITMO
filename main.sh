@@ -119,6 +119,18 @@ FSchecker() {
         results[$fs]=$((read_iops + write_iops))
         echo "$fs Read IOPS: $read_iops, Write IOPS: $write_iops" | tee -a $logfile
     done
+    echo "Тестирование с использованием hdparm и запись результатов..."
+    
+    for fs in "${!images[@]}"; do
+        echo "Testing $fs..."
+        if [[ $fs == "zfs" ]]; then
+            # ZFS не поддерживается hdparm, пропустить тест
+            echo "Skipped for ZFS" | tee -a $logfile
+            continue
+        fi
+        hdparm_result=$(sudo hdparm -tT ${images[$fs]} | grep "Timing cached reads\|Timing buffered disk reads")
+        echo "$fs: $hdparm_result" | tee -a $logfile
+    done
 
     echo "Определение лучшей ФС..."
     best_fs=""
@@ -140,7 +152,6 @@ FSchecker() {
     for img in "${images[@]}"; do
         rm -rf $img
     done
-
     cd $workdir
 }
 
