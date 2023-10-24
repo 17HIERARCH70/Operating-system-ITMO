@@ -355,6 +355,23 @@ ForkBomb() {
     cd $work_dir
 	clear;main
 }
+VirtualCheck()
+{
+    cd $work_dir/VM/
+    echo "Сейчас пройдет проверка на виртаульную систему..."
+    ARCH=$(uname -m)
+    if [ "$ARCH" = "aarch64" ]; then
+        as -o aarch64.o aarch64.S
+        ld -o aarch64 aarch64.o
+        ./aarch64
+    else
+        nasm -f elf64 NASM.S -o NASM.o
+        ld -o NASM NASM.o
+        ./NASM
+    fi
+    cd $work_dir
+	main
+}
 
 main() {
 	BASEDIR=$(dirname "$(realpath "$0")")    
@@ -366,9 +383,10 @@ main() {
     echo "4 - Scheduler"
     echo "5 - FSchecker"
     echo "6 - AllocTests"
-    echo "Для выхода нажми - 7"
+    echo "7 - VirtualCheck"
+    echo "Для выхода нажми - 8"
 
-	read -p "Введи 1-7: " Lab
+	read -p "Введи 1-8: " Lab
 	case $Lab in
 		1) clear; ForkBomb ;;
         2) clear; MemBomb ;;
@@ -376,7 +394,8 @@ main() {
         4) BLOCK; Scheduler;;
         5) clear; FSchecker;;
         6) clear; AllocTests;;
-		7) clear; exit;;
+        7) clear; VirtualCheck;;
+		8) clear; exit;;
 	esac
 	main
 }
