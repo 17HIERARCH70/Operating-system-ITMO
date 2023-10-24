@@ -113,23 +113,16 @@ FSchecker() {
     echo "FS Test Results" > $logfile
     for fs in "${!images[@]}"; do
         echo "Testing $fs..."
-        result=$(sudo fio --randrepeat=1 --ioengine=libaio --direct=1 --gtod_reduce=1 --name=test --filename=/mnt/$fs/testfile --bs=4k --iodepth=64 --size=1G --readwrite=randrw --rwmixread=75 | grep -E "read: IOPS=|write: IOPS=")
-        read_iops=$(echo $result | grep -oP 'read: IOPS=\K\d+')
-        write_iops=$(echo $result | grep -oP 'write: IOPS=\K\d+')
-        results[$fs]=$((read_iops + write_iops))
-        echo "$fs Read IOPS: $read_iops, Write IOPS: $write_iops" | tee -a $logfile
-    done
-    echo "Тестирование с использованием hdparm и запись результатов..."
-    
-    for fs in "${!images[@]}"; do
-        echo "Testing $fs..."
-        if [[ $fs == "zfs" ]]; then
-            # ZFS не поддерживается hdparm, пропустить тест
-            echo "Skipped for ZFS" | tee -a $logfile
-            continue
-        fi
-        hdparm_result=$(sudo hdparm -tT ${images[$fs]} | grep "Timing cached reads\|Timing buffered disk reads")
-        echo "$fs: $hdparm_result" | tee -a $logfile
+        total_iops=0
+        for i in {1..5}; do
+            result=$(sudo fio --randrepeat=1 --ioengine=libaio --direct=1 --gtod_reduce=1 --name=test --filename=/mnt/$fs/testfile --bs=4k --iodepth=64 --size=1G --readwrite=randrw --rwmixread=75 | grep -E "read: IOPS=|write: IOPS=")
+            read_iops=$(echo $result | grep -oP 'read: IOPS=\K\d+')
+            write_iops=$(echo $result | grep -oP 'write: IOPS=\K\d+')
+            total_iops=$((total_iops + read_iops + write_iops))
+        done
+        avg_iops=$((total_iops / 5))
+        results[$fs]=$avg_iops
+        echo "$fs Average IOPS: $avg_iops" | tee -a $logfile
     done
 
     echo "Определение лучшей ФС..."
