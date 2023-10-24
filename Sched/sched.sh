@@ -47,7 +47,7 @@ T_S()
 		
 		echo "Тестирование Bonnie++"
 		mkdir boniee_test_dir
-		bonnie++ -u root -d $BASEDIR/boniee_test_dir
+		bonnie++ -u root -d boniee_test_dir
 		rm -rf boniee_test_dir
 		echo 3 > /proc/sys/vm/drop_caches
 		
@@ -154,7 +154,7 @@ C_P_Of_bfq()
 		9) echo "max_budget" && cat /sys/block/$BLOCK_/queue/iosched/max_budget && read -p "Введите новое значение: " max_budget && echo $max_budget > /sys/block/$BLOCK_/queue/iosched/max_budget && C_P_Of_bfq;;
 		10) echo "strict_guarantees" && cat /sys/block/$BLOCK_/queue/iosched/strict_guarantees && read -p "Введите новое значение: " strict_guarantees && echo $strict_guarantees > /sys/block/$BLOCK_/queue/iosched/strict_guarantees && C_P_Of_bfq;;
 		11) echo 16384 > /sys/block/$BLOCK_/queue/iosched/back_seek_max && echo 8 > /sys/block/$BLOCK_/queue/iosched/slice_idle && echo 124 > /sys/block/$BLOCK_/queue/iosched/timeout_sync && echo 2 > /sys/block/$BLOCK_/queue/iosched/back_seek_penalty && echo 1 > /sys/block/$BLOCK_/queue/iosched/low_latency && echo 8000 >/sys/block/$BLOCK_/queue/iosched/slice_idle_us && echo 250 > /sys/block/$BLOCK_/queue/iosched/fifo_expire_async && echo 0 > /sys/block/$BLOCK_/queue/iosched/max_budget  && echo 0 > /sys/block/$BLOCK_/queue/iosched/strict_guarantees && echo 125 > /sys/block/$BLOCK_/queue/iosched/fifo_expire_sync ;;
-		12) main;;
+		12) Schedulers;;
 	esac
 	
 }
@@ -189,7 +189,7 @@ BLOCK()
 
 Schedulers()
 {
-    
+    BASEDIR=$(dirname "$(realpath "$0")")    
 	echo "Меню планировщиков ввода-вывода"
 	echo "Выберите опцию:"
 	echo "1. Просмотр информации о системе"
@@ -207,7 +207,7 @@ Schedulers()
 		3) clear; C_D_Scheduler ;;
 		4) clear ; C_P_Of_Schedulers;;
 		5) clear & T_S;;
-		6) clear & main;;
+		6) clear ; exit;;
 		7) clear ; exit;;
 	esac
 	Schedulers
