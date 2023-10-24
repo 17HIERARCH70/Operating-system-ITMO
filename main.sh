@@ -119,6 +119,7 @@ FSchecker() {
             read_iops=$(echo $result | grep -oP 'read: IOPS=\K\d+')
             write_iops=$(echo $result | grep -oP 'write: IOPS=\K\d+')
             total_iops=$((total_iops + read_iops + write_iops))
+            echo "Iteration $i - Read IOPS: $read_iops, Write IOPS: $write_iops, Total IOPS: $total_iops" >> $logfile
         done
         avg_iops=$((total_iops / 5))
         results[$fs]=$avg_iops
