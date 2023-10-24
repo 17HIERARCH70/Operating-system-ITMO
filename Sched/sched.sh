@@ -172,6 +172,7 @@ C_P_Of_Schedulers()
 
 C_D_Scheduler()
 {
+    cat /sys/block/$BLOCK_/queue/scheduler
 	read -p "Введите полное имя планировщика: " S_To_Change
 	echo $S_To_Change > /sys/block/$BLOCK_/queue/scheduler
 	A_S_After_Change
