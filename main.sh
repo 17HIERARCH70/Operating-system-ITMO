@@ -144,32 +144,56 @@ FSchecker() {
     cd $workdir
 }
 
-MallocFree() {
-    cd $work_dir/MallocFree
-    gcc -o MallocFree MallocFree.c
+AllocTests() {
+    cd $work_dir/AllocTests
+
+    echo "Выберите файл для компиляции и запуска:"
+    echo "1. Aligned_Alloc.c"
+    echo "2. Calloc.c"
+    echo "3. Malloc.c"
+    read -p "Введите номер выбранного файла: " file_number
+
+    case $file_number in
+        1) file_name="Aligned_Alloc";;
+        2) file_name="Calloc";;
+        3) file_name="Malloc";;
+        *) echo "Некорректный ввод"; return;;
+    esac
+
+    gcc -o $file_name $file_name.c
 
     read -p "У вас есть возможность запустить программу. 
         Запуск - 'y', отказ от запуска - 'n': " response
-        if [ "$response" == "y" ]; then 
+    if [ "$response" == "y" ]; then 
         echo "Запуск..."
         sleep 2
-        ./MallocFree
-        elif [ "$response" == "n" ]; then
-            echo "Отменяем запуск..."
-            rm MallocFree
-        else
-            echo "Некорректный ввод"
-        fi
+        ./$file_name
+    elif [ "$response" == "n" ]; then
+        echo "Отменяем запуск..."
+    else
+        echo "Некорректный ввод"
+    fi
+
     sleep 5
-    rm MallocFree
+    rm $file_name
     cd $work_dir
 	clear
     echo "Был создан memory_allocation_log"
     main
 }
 
+BLOCK()
+{
+	echo "Выберите диск, для которого нужно настроить планировщик ввода-вывода"
+	lsblk -l
+	read -p "Введите имя диска (sda/sdb/..): " BLOCK_
+	schedulers=/sys/block/$BLOCK_/queue/scheduler
+	clear
+}
 
 Scheduler() {
+    sudo modprobe bfq
+    sudo modprobe kyber-iosched
     cd $work_dir/Sched
     chmod +x sched.sh
     sudo ./sched.sh
@@ -345,7 +369,7 @@ main() {
     echo "3 - LinPack"
     echo "4 - Scheduler"
     echo "5 - FSchecker"
-    echo "6 - MallocFree"
+    echo "6 - AllocTests"
     echo "Для выхода нажми - 7"
 
 	read -p "Введи 1-7: " Lab
@@ -353,9 +377,9 @@ main() {
 		1) clear; ForkBomb ;;
         2) clear; MemBomb ;;
         3) clear; LinPack ;;
-        4) clear; Scheduler;;
+        4) BLOCK; Scheduler;;
         5) clear; FSchecker;;
-        6) clear; MallocFree;;
+        6) clear; AllocTests;;
 		7) clear; exit;;
 	esac
 	main
