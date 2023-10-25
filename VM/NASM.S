@@ -33,7 +33,3 @@ _start:
     xor ebx, ebx // Код выхода 0
     int 0x80 // Вызов системного вызова exit для завершения программы
 
-
-//nasm -f elf64 NASM.S -o NASM.o
-//ld -o NASM NASM.o
-//./NASM

@@ -32,6 +32,3 @@ _start:
     svc 0 // Завершение программы
 
 
-//as -o aarch64.o aarch64.S
-//ld -o aarch64 aarch64.o
-//./aarch64
