@@ -22,7 +22,6 @@ int main(int argc, char *argv[])
     for (i = PAGESIZE; i <= SIZE; i *= 2)
     {
         long count = SIZE / i;
-
         for (j = 0; j < OPERATION_COUNT; ++j)
         {
             clock_t start_aligned_alloc = clock();
