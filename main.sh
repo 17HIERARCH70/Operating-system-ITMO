@@ -373,6 +373,39 @@ VirtualCheck()
 	main
 }
 
+TCP()
+{
+    cd $work_dir/TCP
+
+    # Компиляция сервера и клиента
+    g++ server.cpp -o server
+    g++ client.cpp -o client
+
+    # Запрос пользователя о настройке SO_REUSEADDR
+    read -p "Do you want to enable SO_REUSEADDR? (y/n): " choice
+
+    # Установка соответствующей опции в сервере
+    if [ "$choice" == "y" ]; then
+        echo "Setting SO_REUSEADDR option in server."
+        sed -i 's/int reuse = 0/int reuse = 1/' server.cpp
+    fi
+
+    # Запуск сервера в фоновом режиме
+    ./server &
+
+    # Тестирование с клиентом
+    ./client
+
+    # Убиваем сервер
+    pkill -f server
+
+    # Очистка
+    rm server client
+
+    cd $work_dir
+	main
+}
+
 main() {
 	BASEDIR=$(dirname "$(realpath "$0")")    
 
@@ -384,9 +417,10 @@ main() {
     echo "5 - FSchecker"
     echo "6 - AllocTests"
     echo "7 - VirtualCheck"
-    echo "Для выхода нажми - 8"
+    echo "8 - TCP Client/Server"
+    echo "Для выхода нажми - 9"
 
-	read -p "Введи 1-8: " Lab
+	read -p "Введи 1-9: " Lab
 	case $Lab in
 		1) clear; ForkBomb ;;
         2) clear; MemBomb ;;
@@ -395,7 +429,8 @@ main() {
         5) clear; FSchecker;;
         6) clear; AllocTests;;
         7) clear; VirtualCheck;;
-		8) clear; exit;;
+        8) clear; TCP;;
+		9) clear; exit;;
 	esac
 	main
 }
