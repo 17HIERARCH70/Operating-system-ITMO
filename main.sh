@@ -396,12 +396,6 @@ TCP()
     # Тестирование с клиентом
     ./client
 
-    # Убиваем сервер
-    pkill -f server
-
-    # Очистка
-    rm server client
-
     cd $work_dir
 	main
 }
