@@ -377,27 +377,33 @@ TCP()
 {
     cd $work_dir/TCP
 
-    # Компиляция сервера и клиента
-    g++ server.cpp -o server
-    g++ client.cpp -o client
+    read -p "Запустить TCP сервер? (y/n): " choice
 
-    # Запрос пользователя о настройке SO_REUSEADDR
-    read -p "Do you want to enable SO_REUSEADDR? (y/n): " choice
-
-    # Установка соответствующей опции в сервере
-    if [ "$choice" == "y" ]; then
-        echo "Setting SO_REUSEADDR option in server."
-        sed -i 's/int reuse = 0/int reuse = 1/' server.cpp
+    if [ "$choice" == "y" ]; then 
+        echo "Запуск сервера..."
+        cd $work_dir/TCP/server
+        go run server.go 2>&1 | tee server.log &
+        server_pid=$!
+    else 
+        echo "Отмена..."
+        cd $work_dir
+        main
     fi
-
-    # Запуск сервера в фоновом режиме
-    ./server &
-
-    # Тестирование с клиентом
-    ./client
-
+    sleep 1
+    read -p "Запустить TCP клиент? (y/n): " choice
+    if [ "$choice" == "y" ]; then 
+        echo "Запуск клиента..."
+        cd $work_dir/TCP/client
+        trap 'kill $server_pid; exit' INT TERM EXIT  # Добавляем trap для завершения сервера при завершении скрипта
+        go run client.go 2>&1 | tee client.log
+        echo "Running completed." >> client.log
+    else 
+        echo "Отмена..."
+        cd $work_dir
+        main
+    fi
     cd $work_dir
-	main
+    main
 }
 
 main() {
